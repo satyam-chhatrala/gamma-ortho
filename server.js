@@ -5,11 +5,13 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors'); 
 const multer = require('multer'); // Added multer require for inquiry form
+const mongoose = require('mongoose'); // Import Mongoose
 const app = express();
 
 // Import route modules
 const orderRoutes = require('./routes/orderRoutes'); // Ensure import path is correct
 const inquiryRoutes = require('./routes/inquiryRoutes'); // Ensure import path is correct
+const adminProductRoutes = require('./routes/adminProductRoutes'); // For managing products
 
 // Environment variables are expected to be set by the hosting platform (e.g., Render.com)
 const port = process.env.PORT || 3001; 
@@ -17,7 +19,8 @@ const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER;
 const SENDER_EMAIL_PASS = process.env.SENDER_EMAIL_PASS; 
 const OWNER_EMAIL = process.env.OWNER_EMAIL;       
 const COMPANY_NAME = 'Gamma Ortho Instruments';
-const FRONTEND_URL = process.env.FRONTEND_URL; 
+const FRONTEND_URL = process.env.FRONTEND_URL;
+const MONGODB_URI = process.env.MONGODB_URI; // For MongoDB connection string
 
 console.log("--------------------------------------------------");
 console.log("Backend Server Starting...");
@@ -27,6 +30,18 @@ console.log("SENDER_EMAIL_USER configured:", SENDER_EMAIL_USER ? "Yes" : "No - E
 console.log("OWNER_EMAIL configured:", OWNER_EMAIL ? "Yes" : "No - Owner emails will fail if missing");
 console.log("--------------------------------------------------");
 
+// --- Database Connection ---
+if (!MONGODB_URI) {
+    console.error("FATAL ERROR: MONGODB_URI environment variable is not set.");
+    // process.exit(1); // Optionally exit if DB connection is critical for startup
+} else {
+    mongoose.connect(MONGODB_URI)
+      .then(() => console.log('Successfully connected to MongoDB database.'))
+      .catch(err => {
+        console.error('MongoDB connection error:', err.message);
+        // process.exit(1); // Optionally exit if DB connection fails
+      });
+}
 
 // Configure CORS
 if (!FRONTEND_URL) {
@@ -65,6 +80,7 @@ if (SENDER_EMAIL_USER && SENDER_EMAIL_PASS) {
 // --- API Routes ---
 app.use('/api/orders', orderRoutes);       // Mount order routes
 app.use('/api/inquiry', inquiryRoutes);    // Mount inquiry routes
+app.use('/api/admin/products', adminProductRoutes); // Mount admin product routes
 
 
 // Test route (can be kept for basic server health check)
