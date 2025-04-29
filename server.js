@@ -75,8 +75,8 @@ app.post('/api/place-order', async (req, res) => {
 
     // --- Prepare Email for Customer ---
     let customerEmailHtml = `
-      <h1>Thank you for your order, ${orderData.customerName}!</h1>
-      <p>We've received your order inquiry from ${COMPANY_NAME}. We will contact you shortly to confirm the details and proceed with your order.</p>
+      <h1>Your order is placed successfully, ${orderData.customerName}!</h1>
+      <p>We will contact you shortly to confirm the details and proceed with your order.</p>
       <h2>Order Summary:</h2>
       <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
         <thead style="background-color: #f2f2f2;">
@@ -135,7 +135,7 @@ app.post('/api/place-order', async (req, res) => {
     // --- Prepare Email for Owner/Manager ---
     let ownerEmailHtml = `
       <h1>New Order Received! (#${Date.now().toString().slice(-6)})</h1>
-      <p>A new order inquiry has been placed on the ${COMPANY_NAME} website.</p>
+      <p>A new order has been placed on the ${COMPANY_NAME} website.</p>
       <h2>Customer Details:</h2>
       <p>Name: ${orderData.customerName}</p>
       <p>Email: ${orderData.customerEmail}</p>
@@ -192,7 +192,7 @@ app.post('/api/place-order', async (req, res) => {
     const ownerMailOptions = {
       from: `"${COMPANY_NAME} Website" <${SENDER_EMAIL_USER}>`,
       to: OWNER_EMAIL,
-      subject: `New Order Inquiry - ${orderData.customerName} (#${Date.now().toString().slice(-6)})`,
+      subject: `New Order Placed - ${orderData.customerName} (#${Date.now().toString().slice(-6)})`,
       html: ownerEmailHtml
     };
 
