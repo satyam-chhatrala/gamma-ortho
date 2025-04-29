@@ -35,7 +35,7 @@ const sendOrderConfirmationEmails = async (orderData) => {
     // --- Prepare Email for Customer ---
     let customerEmailHtml = `
       <h1>Thank you for your order, ${orderData.customerName}!</h1>
-      <p>We've received your order inquiry from ${COMPANY_NAME}. We will contact you shortly to confirm the details and proceed with your order.</p>
+      <p>We've received your order inquiry. We will contact you shortly to confirm the details and proceed with your order.</p>
       <h2>Order Summary:</h2>
       <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
         <thead style="background-color: #f2f2f2;">
@@ -93,8 +93,7 @@ const sendOrderConfirmationEmails = async (orderData) => {
 
     // --- Prepare Email for Owner/Manager ---
     let ownerEmailHtml = `
-      <h1>New Order Received! (#${Date.now().toString().slice(-6)})</h1>
-      <p>A new order inquiry has been placed on the ${COMPANY_NAME} website.</p>
+      <h1>New Order Placed! (#${Date.now().toString().slice(-6)})</h1>
       <h2>Customer Details:</h2>
       <p>Name: ${orderData.customerName}</p>
       <p>Email: ${orderData.customerEmail}</p>
@@ -159,7 +158,7 @@ const sendOrderConfirmationEmails = async (orderData) => {
         transporter.sendMail(customerMailOptions),
         transporter.sendMail(ownerMailOptions)
     ]);
-    console.log('Order confirmation emails sent successfully.');
+    console.log('Order confirmation mail sent successfully.');
 };
 
 const sendInquiryEmail = async (inquiryData, files) => {
@@ -169,7 +168,7 @@ const sendInquiryEmail = async (inquiryData, files) => {
     }
 
     let inquiryEmailHtml = `
-        <h1>New Inquiry Received from ${COMPANY_NAME} Website</h1>
+        <h1>New Inquiry Received</h1>
         <h2>Inquiry Details:</h2>
         <p><strong>Name:</strong> ${inquiryData['contact-name'] || 'N/A'}</p>
         <p><strong>Email:</strong> ${inquiryData['contact-email'] || 'N/A'}</p>
