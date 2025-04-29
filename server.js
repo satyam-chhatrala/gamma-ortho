@@ -8,8 +8,8 @@ const multer = require('multer'); // Added multer require for inquiry form
 const app = express();
 
 // Import route modules
-const orderRoutes = require('./services/orderRoutes'); // Ensure import path is correct
-const inquiryRoutes = require('./services/inquiryRoutes'); // Ensure import path is correct
+const orderRoutes = require('./routes/orderRoutes'); // Ensure import path is correct
+const inquiryRoutes = require('./routes/inquiryRoutes'); // Ensure import path is correct
 
 // Environment variables are expected to be set by the hosting platform (e.g., Render.com)
 const port = process.env.PORT || 3001; 
