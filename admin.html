@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamma Ortho - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #e5e7eb; }
+        .admin-container { max-width: 1200px; margin: 2rem auto; padding: 2rem; background-color: #1f2937; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .form-section { margin-bottom: 2rem; padding: 1.5rem; background-color: #374151; border-radius: 0.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #d1d5db; }
+        .input-field, .select-field, .textarea-field, .file-input-styled {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #4b5563;
+            background-color: #1f2937;
+            color: #e5e7eb;
+            margin-bottom: 1rem;
+        }
+        .file-input-styled::file-selector-button {
+            font-weight: 500;
+            color: #0ea5e9; /* sky-500 */
+            background-color: #374151; /* gray-700 */
+            border: none;
+            padding: 0.5rem 0.75rem;
+            margin-right: 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .file-input-styled::file-selector-button:hover {
+            background-color: #4b5563; /* gray-600 */
+        }
+        .input-field:focus, .select-field:focus, .textarea-field:focus, .file-input-styled:focus {
+            outline: none;
+            border-color: #3b82f6; /* sky-500 */
+            box-shadow: 0 0 0 2px #60a5fa; /* sky-400 with opacity */
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-primary { background-color: #0ea5e9; /* sky-500 */ color: white; }
+        .btn-primary:hover { background-color: #0284c7; /* sky-600 */ }
+        .btn-secondary { background-color: #4b5563; /* gray-600 */ color: white; }
+        .btn-secondary:hover { background-color: #6b7280; /* gray-500 */ }
+        .btn-danger { background-color: #dc2626; /* red-600 */ color: white; }
+        .btn-danger:hover { background-color: #b91c1c; /* red-700 */ }
+        .dimension-entry { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
+        .dimension-entry input { margin-bottom: 0; }
+        #admin-feedback { margin-top: 1rem; padding: 0.75rem; border-radius: 0.375rem; text-align: center; }
+        .feedback-success { background-color: #10b981; color: white; } /* green-500 */
+        .feedback-error { background-color: #ef4444; color: white; } /* red-500 */
+        .hidden-field { display: none; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-sky-400">Gamma Ortho Instruments - Admin Panel</h1>
+        </header>
+
+        <section class="form-section" id="add-product-section">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-100">Add New Product</h2>
+            <form id="add-product-form" enctype="multipart/form-data">
+                <div>
+                    <label for="product-name">Product Name</label>
+                    <input type="text" id="product-name" name="name" class="input-field" required>
+                </div>
+                <div>
+                    <label for="product-description">Description</label>
+                    <textarea id="product-description" name="description" rows="4" class="textarea-field" required></textarea>
+                </div>
+                <div>
+                    <label for="product-type-select">Product Type</label>
+                    <select id="product-type-select" name="productTypeSelect" class="select-field" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="wire-pin">Wire and Pin</option>
+                        <option value="ao-fixator">A O-Fixator</option>
+                        <option value="jess-fixator">Jess Fixator</option>
+                        <option value="ring-fixator">Ring Fixator</option>
+                        <option value="rail-fixator">Rail Fixator</option>
+                        <option value="other">Other (Please specify)</option>
+                    </select>
+                </div>
+                <div id="new-product-type-container" class="hidden-field mt-2 mb-4">
+                    <label for="new-product-type-input">Specify New Product Type</label>
+                    <input type="text" id="new-product-type-input" name="newProductType" class="input-field">
+                </div>
+
+                <div class="mt-4">
+                    <label>Dimensions & Pricing (Base Price before GST)</label>
+                    <div id="dimensions-container">
+                        </div>
+                    <button type="button" id="add-dimension-btn" class="btn btn-secondary text-sm mt-2">
+                        <i class="fas fa-plus mr-1"></i> Add Dimension
+                    </button>
+                </div>
+                
+                <div class="mt-4">
+                    <label for="product-gst-rate">GST Rate (e.g., 0.12 for 12%)</label>
+                    <input type="number" id="product-gst-rate" name="gstRate" class="input-field" step="0.01" min="0" max="1" value="0.12" required>
+                </div>
+
+                <div class="mt-4">
+                    <label for="product-base-image">Base Image</label>
+                    <input type="file" id="product-base-image" name="baseImage" class="file-input-styled">
+                    <p class="text-xs text-gray-400 mt-1">Backend needs update to handle file uploads.</p>
+                </div>
+                <div class="mt-4">
+                    <label for="product-additional-images">Additional Images</label>
+                    <input type="file" id="product-additional-images" name="additionalImages" class="file-input-styled" multiple>
+                     <p class="text-xs text-gray-400 mt-1">Backend needs update to handle file uploads.</p>
+                </div>
+
+                <div class="mt-4 flex items-center">
+                    <input type="checkbox" id="product-is-active" name="isActive" class="mr-2 h-5 w-5 accent-sky-500" checked>
+                    <label for="product-is-active" class="mb-0">Product is Active (Visible on customer site)</label>
+                </div>
+
+                <div class="mt-6">
+                    <button type="submit" class="btn btn-primary w-full">Add Product</button>
+                </div>
+            </form>
+            <div id="admin-feedback"></div>
+        </section>
+
+        <section class="mt-12">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-100">Existing Products</h2>
+            <div id="existing-products-list" class="bg-gray-800 p-4 rounded-md">
+                <p class="text-center text-gray-400">Product listing will appear here...</p>
+                </div>
+        </section>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://gamma-ortho-api.onrender.com'; // Ensure this is your deployed backend URL
+        const GST_RATE_DEFAULT = 0.12; 
+
+        const addProductForm = document.getElementById('add-product-form');
+        const dimensionsContainer = document.getElementById('dimensions-container');
+        const addDimensionBtn = document.getElementById('add-dimension-btn');
+        const adminFeedback = document.getElementById('admin-feedback');
+        const productTypeSelect = document.getElementById('product-type-select');
+        const newProductTypeContainer = document.getElementById('new-product-type-container');
+        const newProductTypeInput = document.getElementById('new-product-type-input');
+
+        // Function to add a new dimension input group
+        function addDimensionEntry() {
+            const entryCount = dimensionsContainer.children.length;
+            const dimensionEntry = document.createElement('div');
+            dimensionEntry.className = 'dimension-entry';
+            dimensionEntry.innerHTML = `
+                <input type="text" name="dimensionName-${entryCount}" placeholder="Dimension Name (e.g., Small, 2.5mm)" class="input-field flex-grow" required>
+                <input type="number" name="basePrice-${entryCount}" placeholder="Base Price" class="input-field w-1/3" step="0.01" min="0" required>
+                <button type="button" class="btn-danger p-2 rounded remove-dimension-btn" title="Remove Dimension">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            dimensionsContainer.appendChild(dimensionEntry);
+
+            dimensionEntry.querySelector('.remove-dimension-btn').addEventListener('click', function() {
+                this.parentElement.remove();
+            });
+        }
+
+        // Add one dimension entry initially
+        addDimensionEntry(); 
+        if(document.getElementById('product-gst-rate')) {
+            document.getElementById('product-gst-rate').value = GST_RATE_DEFAULT;
+        }
+
+        addDimensionBtn.addEventListener('click', addDimensionEntry);
+
+        // Show/hide new product type input based on selection
+        productTypeSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                newProductTypeContainer.style.display = 'block';
+                newProductTypeInput.required = true;
+            } else {
+                newProductTypeContainer.style.display = 'none';
+                newProductTypeInput.required = false;
+                newProductTypeInput.value = ''; // Clear if hidden
+            }
+        });
+
+        addProductForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            adminFeedback.textContent = '';
+            adminFeedback.className = ''; 
+
+            const formData = new FormData(); // Use FormData for file uploads
+
+            // Append text fields
+            formData.append('name', document.getElementById('product-name').value);
+            formData.append('description', document.getElementById('product-description').value);
+            
+            let productType = productTypeSelect.value;
+            if (productType === 'other') {
+                const newType = newProductTypeInput.value.trim();
+                if (!newType) {
+                    adminFeedback.textContent = 'Please specify the new product type.';
+                    adminFeedback.className = 'feedback-error';
+                    return;
+                }
+                productType = newType.toLowerCase().replace(/\s+/g, '-'); // Sanitize
+            }
+            formData.append('productType', productType);
+            
+            formData.append('gstRate', document.getElementById('product-gst-rate').value);
+            formData.append('isActive', document.getElementById('product-is-active').checked);
+
+            // Append dimensions
+            const dimensionElements = dimensionsContainer.querySelectorAll('.dimension-entry');
+            if (dimensionElements.length === 0) {
+                adminFeedback.textContent = 'Please add at least one dimension and price.';
+                adminFeedback.className = 'feedback-error';
+                return;
+            }
+            dimensionElements.forEach((entry, index) => {
+                formData.append(`dimensions[${index}][dimensionName]`, entry.querySelector(`input[name^="dimensionName-"]`).value);
+                formData.append(`dimensions[${index}][basePrice]`, entry.querySelector(`input[name^="basePrice-"]`).value);
+            });
+
+            // Append files (conceptual - backend needs to handle this)
+            const baseImageFile = document.getElementById('product-base-image').files[0];
+            if (baseImageFile) {
+                formData.append('baseImage', baseImageFile); // Name 'baseImage' should match multer field name
+            }
+
+            const additionalImageFiles = document.getElementById('product-additional-images').files;
+            if (additionalImageFiles.length > 0) {
+                for (let i = 0; i < additionalImageFiles.length; i++) {
+                    formData.append('additionalImages', additionalImageFiles[i]); // Name 'additionalImages'
+                }
+            }
+            
+            // For now, since backend expects URLs, we'll send the placeholder text if no file is selected
+            // This part needs to be removed/changed when backend handles file uploads
+            if (!baseImageFile && document.getElementById('product-base-image-url')) {
+                 formData.append('baseImageURL', document.getElementById('product-base-image-url').value);
+            }
+            if (additionalImageFiles.length === 0 && document.getElementById('product-additional-image-urls')) {
+                const urls = document.getElementById('product-additional-image-urls').value;
+                 if (urls.trim() !== '') {
+                    urls.split(',').map(url => url.trim()).filter(url => url).forEach(url => formData.append('additionalImageURLs[]', url));
+                } else {
+                     formData.append('additionalImageURLs', []); // Send empty array if input is blank
+                }
+            }
+
+
+            console.log("Sending product data to backend (FormData):");
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}:`, value);
+            }
+
+
+            try {
+                // IMPORTANT: When sending FormData, do NOT set the 'Content-Type' header manually.
+                // The browser will set it automatically with the correct boundary.
+                const response = await fetch(`${BACKEND_URL}/api/admin/products`, {
+                    method: 'POST',
+                    body: formData 
+                    // headers: { 'Content-Type': 'application/json' } // REMOVE THIS LINE for FormData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    adminFeedback.textContent = 'Product added successfully!';
+                    adminFeedback.className = 'feedback-success';
+                    addProductForm.reset();
+                    dimensionsContainer.innerHTML = ''; 
+                    addDimensionEntry(); 
+                    newProductTypeContainer.style.display = 'none'; // Hide new type input
+                    newProductTypeInput.required = false;
+                    // TODO: Refresh the existing products list
+                    // fetchAndDisplayProducts(); 
+                } else {
+                    adminFeedback.textContent = `Error: ${result.message || response.statusText}`;
+                    if(result.errors) {
+                        let errorMessages = Object.values(result.errors).map(e => e.message).join('\n');
+                        adminFeedback.textContent += `\nDetails:\n${errorMessages}`;
+                    }
+                    adminFeedback.className = 'feedback-error';
+                }
+            } catch (error) {
+                console.error('Error adding product:', error);
+                adminFeedback.textContent = 'An unexpected error occurred. Please check console.';
+                adminFeedback.className = 'feedback-error';
+            }
+        });
+
+        // Placeholder for fetching and displaying products (to be implemented)
+        async function fetchAndDisplayProducts() {
+            const listContainer = document.getElementById('existing-products-list');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/products`); 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const products = await response.json();
+                
+                if (products.length === 0) {
+                    listContainer.innerHTML = '<p class="text-center text-gray-400">No products found.</p>';
+                    return;
+                }
+
+                let productsHtml = '<ul class="space-y-3">';
+                products.forEach(product => {
+                    productsHtml += `
+                        <li class="p-3 bg-gray-700 rounded-md shadow flex justify-between items-center">
+                            <div>
+                                <h4 class="font-semibold text-lg text-gray-100">${product.name} <span class="text-xs ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span></h4>
+                                <p class="text-sm text-gray-400">${product.productType}</p>
+                                <p class="text-sm text-gray-400">${product.dimensions.length} dimension(s)</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-secondary btn-sm mr-2 edit-product-btn" data-id="${product._id}"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="btn btn-danger btn-sm delete-product-btn" data-id="${product._id}"><i class="fas fa-trash"></i> Delete</button>
+                            </div>
+                        </li>
+                    `;
+                });
+                productsHtml += '</ul>';
+                listContainer.innerHTML = productsHtml;
+
+            } catch (error) {
+                console.error('Error fetching products:', error);
+                listContainer.innerHTML = '<p class="text-center text-red-500">Error loading products.</p>';
+            }
+        }
+
+        // Call fetchAndDisplayProducts on page load
+        // window.addEventListener('load', fetchAndDisplayProducts); // Uncomment when backend is ready
+    </script>
+</body>
+</html>
