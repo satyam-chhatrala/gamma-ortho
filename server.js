@@ -4,6 +4,16 @@ const nodemailer = require('nodemailer');
 const cors = require('cors'); // Import CORS package
 const app = express();
 
+// Apply CORS middleware to all routes FIRST.
+// This should handle both simple and preflight (OPTIONS) requests.
+// TEMPORARILY ALLOW ALL ORIGINS FOR DEBUGGING.
+console.log("WARNING: CORS is temporarily configured to allow all origins for debugging.");
+app.use(cors()); 
+// Explicitly handle preflight requests for all routes as a fallback,
+// ensuring it uses the same permissive CORS settings.
+app.options('*', cors()); 
+
+
 // Environment variables should be used for sensitive data in production
 const port = process.env.PORT || 3001; 
 const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER; 
@@ -14,35 +24,13 @@ const FRONTEND_URL = process.env.FRONTEND_URL; // Will be read from Render envir
 
 console.log("--------------------------------------------------");
 console.log("Backend Server Starting...");
-console.log("Intended FRONTEND_URL for CORS (from env):", FRONTEND_URL);
+console.log("Intended FRONTEND_URL for CORS (from env):", FRONTEND_URL); // This is for when you revert to restrictive CORS
 console.log("SENDER_EMAIL_USER configured:", SENDER_EMAIL_USER ? "Yes" : "No - Email sending will fail");
 console.log("OWNER_EMAIL configured:", OWNER_EMAIL ? "Yes" : "No - Owner emails will fail");
 console.log("--------------------------------------------------");
 
-
-// Configure CORS
-// TEMPORARILY ALLOW ALL ORIGINS FOR DEBUGGING
-console.log("WARNING: CORS is temporarily configured to allow all origins for debugging.");
-app.use(cors()); 
-
-// Original more restrictive CORS - RE-ENABLE FOR PRODUCTION LATER
-// if (!FRONTEND_URL) {
-//     console.error("FATAL ERROR: FRONTEND_URL environment variable is not set. CORS will likely fail.");
-//     // Fallback or throw error if FRONTEND_URL is critical and not set
-// }
-// const corsOptions = {
-//   origin: FRONTEND_URL, 
-//   optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
-// };
-// app.use(cors(corsOptions));
-
-// Middleware to parse JSON request bodies
+// Middleware to parse JSON request bodies - This should come AFTER CORS middleware
 app.use(express.json());
-
-// Explicitly handle OPTIONS requests for the specific route (often helpful)
-// The general app.use(cors()) should also handle this for all origins now,
-// but if you revert to specific origin, this explicit handler might be needed.
-app.options('/api/place-order', cors()); // Allow all origins for OPTIONS preflight for this specific route
 
 
 // Nodemailer Transporter Configuration
@@ -61,7 +49,6 @@ if (SENDER_EMAIL_USER && SENDER_EMAIL_PASS) {
     transporter = {
         sendMail: () => {
             console.error("Dummy transporter: sendMail called, but emails are disabled due to missing credentials.");
-            // Return a resolved promise to avoid breaking Promise.all if this dummy is used
             return Promise.resolve({ messageId: 'dummy-id-no-email-sent-due-to-missing-credentials' }); 
         }
     };
@@ -71,7 +58,7 @@ if (SENDER_EMAIL_USER && SENDER_EMAIL_PASS) {
 // API Endpoint to Handle New Orders
 app.post('/api/place-order', async (req, res) => {
   console.log("Received POST request on /api/place-order");
-  console.log("Request Origin Header:", req.headers.origin); // Log the origin of the request
+  console.log("Request Origin Header:", req.headers.origin); 
   console.log("Request body:", req.body);
   try {
     const orderData = req.body;
@@ -80,11 +67,9 @@ app.post('/api/place-order', async (req, res) => {
       console.error("Validation Error: Missing required order data.");
       return res.status(400).json({ message: 'Missing required order data.' });
     }
-    // Check if email sending is actually possible
+    
     if (!SENDER_EMAIL_USER || !SENDER_EMAIL_PASS || typeof transporter.sendMail !== 'function') { 
         console.error('Email service not properly configured. Cannot send order emails.');
-        // It's important to still acknowledge the order if possible, even if emails fail
-        // For now, we'll send a specific error message back
         return res.status(503).json({ message: 'Order received, but email notification service is currently unavailable.' });
     }
 
