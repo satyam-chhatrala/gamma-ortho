@@ -1,5 +1,5 @@
 {
-  "name": "gamma-ortho-backend",
+  "name": "gamma-ortho",
   "version": "1.0.0",
   "description": "Backend for Gamma Ortho Instruments",
   "main": "server.js",
