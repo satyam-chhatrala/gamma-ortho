@@ -1,17 +1,26 @@
 // server.js
-require('dotenv').config(); // Load environment variables from .env file AT THE VERY TOP
-
 const express = require('express');
-const cors = require('cors'); 
+const nodemailer = require('nodemailer');
+const cors = require('cors'); // Import CORS package
 const app = express();
 
-// Import route modules
-const orderRoutes = require('./routes/orderRoutes');
-const inquiryRoutes = require('./routes/inquiryRoutes'); // New inquiry routes
+// Apply CORS middleware to all routes FIRST.
+// This should handle both simple and preflight (OPTIONS) requests.
+// TEMPORARILY ALLOW ALL ORIGINS FOR DEBUGGING.
+console.log("WARNING: CORS is temporarily configured to allow all origins for debugging.");
+app.use(cors()); 
+// Explicitly handle preflight requests for all routes as a fallback,
+// ensuring it uses the same permissive CORS settings.
+app.options('*', cors()); 
 
+
+// Environment variables should be used for sensitive data in production
 const port = process.env.PORT || 3001; 
-const FRONTEND_URL = process.env.FRONTEND_URL; 
+const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER; 
+const SENDER_EMAIL_PASS = process.env.SENDER_EMAIL_PASS; 
+const OWNER_EMAIL = process.env.OWNER_EMAIL;       
 const COMPANY_NAME = 'Gamma Ortho Instruments';
+const FRONTEND_URL = process.env.FRONTEND_URL; // Will be read from Render environment
 
 console.log("--------------------------------------------------");
 console.log("Backend Server Starting...");
