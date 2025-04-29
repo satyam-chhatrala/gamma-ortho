@@ -1,61 +1,78 @@
 // server.js
 const express = require('express');
 const nodemailer = require('nodemailer');
+const cors = require('cors'); // Import CORS package
 const app = express();
-const port = process.env.PORT || 3001; // Port for your backend server
 
-// Middleware to parse JSON request bodies from the frontend
+// Environment variables should be used for sensitive data in production
+const port = process.env.PORT || 3001; 
+const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER; // e.g., your_app_email@gmail.com
+const SENDER_EMAIL_PASS = process.env.SENDER_EMAIL_PASS; // Your email app password
+const OWNER_EMAIL = process.env.OWNER_EMAIL;       // e.g., amit_chhatrala@yahoo.com
+const COMPANY_NAME = 'Gamma Ortho Instruments';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:your_frontend_port'; // Your deployed frontend URL
+
+// Middleware to parse JSON request bodies
 app.use(express.json());
 
-// --- Nodemailer Transporter Configuration ---
-// IMPORTANT: For production, use a dedicated email service (SendGrid, Mailgun, etc.)
-// Using Gmail for demonstration purposes only.
-// You'll need to enable "Less secure app access" in your Gmail settings
-// or, preferably, use an "App Password" if you have 2-Step Verification enabled.
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // Or your email provider
-  auth: {
-    user: 'YOUR_EMAIL@gmail.com',    // Your email address to send from
-    pass: 'YOUR_EMAIL_PASSWORD_OR_APP_PASSWORD' // Your email password or App Password
-  }
-});
+// Configure CORS
+// For development, you might use app.use(cors());
+// For production, restrict it to your frontend's domain:
+app.use(cors({
+  origin: FRONTEND_URL 
+}));
 
-const OWNER_EMAIL = 'amit_chhatrala@yahoo.com'; // Owner's email address to receive notifications
-const COMPANY_NAME = 'Gamma Ortho Instruments';
 
-// --- API Endpoint to Handle New Orders ---
+// Nodemailer Transporter Configuration
+let transporter;
+if (SENDER_EMAIL_USER && SENDER_EMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail', // Or your configured email provider
+      auth: {
+        user: SENDER_EMAIL_USER,
+        pass: SENDER_EMAIL_PASS 
+      }
+    });
+} else {
+    console.warn("Email credentials not found in environment variables. Email sending will be disabled.");
+    // Create a dummy transporter if no credentials to avoid crashing, but emails won't send
+    transporter = {
+        sendMail: () => Promise.resolve({ messageId: 'dummy-id-no-email-sent' }) // Mock sendMail
+    };
+}
+
+
+// API Endpoint to Handle New Orders
 app.post('/api/place-order', async (req, res) => {
   try {
     const orderData = req.body;
-    // Expected orderData structure from frontend:
-    // {
-    //   orderItems: [ { baseProductId, baseProductName, variants: [ {variantId, dimension, quantity, basePrice, gstRate, priceIncGst }, ... ] }, ... ],
-    //   customerName, customerEmail, mobileCode, mobileNumber, whatsappCode, whatsappNumber,
-    //   address, city, state, country, pincode,
-    //   totalOrderValue // This should be the final total including GST
-    // }
 
     if (!orderData || !orderData.orderItems || !orderData.customerEmail || !orderData.customerName) {
       return res.status(400).json({ message: 'Missing required order data.' });
     }
+    if (!SENDER_EMAIL_USER || !SENDER_EMAIL_PASS) {
+        console.error('Email service not configured. Cannot send order emails.');
+        // Still save to DB if implemented, but inform client about email issue
+        // For now, as DB is not implemented, we can just return an error or a specific message
+        return res.status(503).json({ message: 'Order received, but email notification service is currently unavailable.' });
+    }
 
-    // --- TODO: In a real application, save orderData to your database here ---
 
     // --- Prepare Email for Customer ---
     let customerEmailHtml = `
       <h1>Thank you for your order, ${orderData.customerName}!</h1>
       <p>We've received your order inquiry from ${COMPANY_NAME}. We will contact you shortly to confirm the details and proceed with your order.</p>
       <h2>Order Summary:</h2>
-      <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <thead>
+      <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
+        <thead style="background-color: #f2f2f2;">
           <tr>
-            <th>Product</th>
-            <th>Dimension</th>
-            <th>Qty</th>
-            <th>Base Price/Unit</th>
-            <th>GST/Unit</th>
-            <th>Total/Unit (Incl. GST)</th>
-            <th>Subtotal (Incl. GST)</th>
+            <th style="text-align: left;">Product</th>
+            <th style="text-align: left;">Dimension</th>
+            <th style="text-align: center;">Qty</th>
+            <th style="text-align: right;">Base Price/Unit</th>
+            <th style="text-align: right;">GST/Unit</th>
+            <th style="text-align: right;">Total/Unit (Incl. GST)</th>
+            <th style="text-align: right;">Subtotal (Incl. GST)</th>
           </tr>
         </thead>
         <tbody>
@@ -66,11 +83,11 @@ app.post('/api/place-order', async (req, res) => {
               <tr>
                 <td>${productGroup.baseProductName}</td>
                 <td>${variant.dimension}</td>
-                <td>${variant.quantity}</td>
-                <td>${variant.basePrice.toFixed(2)} Rs</td>
-                <td>${(variant.basePrice * variant.gstRate).toFixed(2)} Rs (${(variant.gstRate * 100).toFixed(0)}%)</td>
-                <td>${variant.priceIncGst.toFixed(2)} Rs</td>
-                <td>${(variant.priceIncGst * variant.quantity).toFixed(2)} Rs</td>
+                <td style="text-align: center;">${variant.quantity}</td>
+                <td style="text-align: right;">${variant.basePrice.toFixed(2)} Rs</td>
+                <td style="text-align: right;">${(variant.basePrice * variant.gstRate).toFixed(2)} Rs (${(variant.gstRate * 100).toFixed(0)}%)</td>
+                <td style="text-align: right;">${variant.priceIncGst.toFixed(2)} Rs</td>
+                <td style="text-align: right;">${(variant.priceIncGst * variant.quantity).toFixed(2)} Rs</td>
               </tr>
             `;
         });
@@ -79,8 +96,8 @@ app.post('/api/place-order', async (req, res) => {
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="6" style="text-align: right; font-weight: bold;">Total Order Value:</td>
-            <td style="font-weight: bold;">${orderData.totalOrderValue} Rs</td>
+            <td colspan="6" style="text-align: right; font-weight: bold; padding-top: 10px;">Total Order Value:</td>
+            <td style="font-weight: bold; text-align: right; padding-top: 10px;">${orderData.totalOrderValue}</td>
           </tr>
         </tfoot>
       </table>
@@ -94,15 +111,15 @@ app.post('/api/place-order', async (req, res) => {
     `;
 
     const customerMailOptions = {
-      from: `"${COMPANY_NAME}" <YOUR_EMAIL@gmail.com>`,
+      from: `"${COMPANY_NAME}" <${SENDER_EMAIL_USER}>`,
       to: orderData.customerEmail,
-      subject: `Your Order Confirmation from ${COMPANY_NAME}`,
+      subject: `Your Order Confirmation from ${COMPANY_NAME} (#${Date.now().toString().slice(-6)})`, // Add a pseudo order ID
       html: customerEmailHtml
     };
 
     // --- Prepare Email for Owner/Manager ---
     let ownerEmailHtml = `
-      <h1>New Order Received!</h1>
+      <h1>New Order Received! (#${Date.now().toString().slice(-6)})</h1>
       <p>A new order inquiry has been placed on the ${COMPANY_NAME} website.</p>
       <h2>Customer Details:</h2>
       <p>Name: ${orderData.customerName}</p>
@@ -110,22 +127,22 @@ app.post('/api/place-order', async (req, res) => {
       <p>Mobile: ${orderData.mobileCode} ${orderData.mobileNumber}</p>
       ${orderData.whatsappNumber ? `<p>WhatsApp: ${orderData.whatsappCode} ${orderData.whatsappNumber}</p>` : ''}
       <p>Address: ${orderData.address}</p>
-      <p>City/District: ${orderData.city}</p>
+      <p>City / District: ${orderData.city}</p>
       <p>State: ${orderData.state}</p>
       <p>Country: ${orderData.country}</p>
       <p>Pincode: ${orderData.pincode}</p>
       
       <h2>Order Items:</h2>
-      <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <thead>
+      <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
+         <thead style="background-color: #f2f2f2;">
           <tr>
-            <th>Product</th>
-            <th>Dimension</th>
-            <th>Qty</th>
-            <th>Base Price/Unit</th>
-            <th>GST/Unit</th>
-            <th>Total/Unit (Incl. GST)</th>
-            <th>Subtotal (Incl. GST)</th>
+            <th style="text-align: left;">Product</th>
+            <th style="text-align: left;">Dimension</th>
+            <th style="text-align: center;">Qty</th>
+            <th style="text-align: right;">Base Price/Unit</th>
+            <th style="text-align: right;">GST/Unit</th>
+            <th style="text-align: right;">Total/Unit (Incl. GST)</th>
+            <th style="text-align: right;">Subtotal (Incl. GST)</th>
           </tr>
         </thead>
         <tbody>
@@ -136,11 +153,11 @@ app.post('/api/place-order', async (req, res) => {
               <tr>
                 <td>${productGroup.baseProductName}</td>
                 <td>${variant.dimension}</td>
-                <td>${variant.quantity}</td>
-                <td>${variant.basePrice.toFixed(2)} Rs</td>
-                <td>${(variant.basePrice * variant.gstRate).toFixed(2)} Rs (${(variant.gstRate * 100).toFixed(0)}%)</td>
-                <td>${variant.priceIncGst.toFixed(2)} Rs</td>
-                <td>${(variant.priceIncGst * variant.quantity).toFixed(2)} Rs</td>
+                <td style="text-align: center;">${variant.quantity}</td>
+                <td style="text-align: right;">${variant.basePrice.toFixed(2)} Rs</td>
+                <td style="text-align: right;">${(variant.basePrice * variant.gstRate).toFixed(2)} Rs (${(variant.gstRate * 100).toFixed(0)}%)</td>
+                <td style="text-align: right;">${variant.priceIncGst.toFixed(2)} Rs</td>
+                <td style="text-align: right;">${(variant.priceIncGst * variant.quantity).toFixed(2)} Rs</td>
               </tr>
             `;
         });
@@ -149,8 +166,8 @@ app.post('/api/place-order', async (req, res) => {
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="6" style="text-align: right; font-weight: bold;">Total Order Value:</td>
-            <td style="font-weight: bold;">${orderData.totalOrderValue} Rs</td>
+            <td colspan="6" style="text-align: right; font-weight: bold; padding-top: 10px;">Total Order Value:</td>
+            <td style="font-weight: bold; text-align: right; padding-top: 10px;">${orderData.totalOrderValue}</td>
           </tr>
         </tfoot>
       </table>
@@ -158,14 +175,13 @@ app.post('/api/place-order', async (req, res) => {
     `;
 
     const ownerMailOptions = {
-      from: `"${COMPANY_NAME} Website" <YOUR_EMAIL@gmail.com>`,
+      from: `"${COMPANY_NAME} Website" <${SENDER_EMAIL_USER}>`,
       to: OWNER_EMAIL,
-      subject: `New Order Inquiry - ${orderData.customerName}`,
+      subject: `New Order Inquiry - ${orderData.customerName} (#${Date.now().toString().slice(-6)})`,
       html: ownerEmailHtml
     };
 
     // --- Send Emails ---
-    // Use Promise.all to send emails concurrently (optional, but can be slightly more efficient)
     await Promise.all([
         transporter.sendMail(customerMailOptions),
         transporter.sendMail(ownerMailOptions)
@@ -176,7 +192,6 @@ app.post('/api/place-order', async (req, res) => {
 
   } catch (error) {
     console.error('Error processing order or sending email:', error);
-    // In a real app, you might want to send a more user-friendly error or log it more robustly
     res.status(500).json({ message: 'There was an error processing your order. Please try again later.' });
   }
 });
