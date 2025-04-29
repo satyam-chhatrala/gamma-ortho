@@ -564,7 +564,7 @@
 
     <script>
         const GST_RATE = 0.12; // 12% GST, configurable
-        const BACKEND_URL = 'https://gamma-ortho.onrender.com'; // Change to your deployed backend URL in production
+        const BACKEND_URL = 'https://gamma-ortho-api.onrender.com'; // REPLACE with your actual deployed backend URL
 
         // --- Sample Data for Locations and Country Codes ---
         const countryCodes = [
@@ -1013,7 +1013,7 @@
             }
         });
 
-        placeOrderBtn.addEventListener('click', async () => { // Added async
+        placeOrderBtn.addEventListener('click', async () => { 
             const customerName = customerNameInput.value.trim();
             const customerEmail = customerEmailInput.value.trim();
             const mobileCode = customerMobileCodeInput.value;
@@ -1057,7 +1057,7 @@
                 state: state,
                 country: country,
                 pincode: pincode,
-                totalOrderValue: orderTotalElement.textContent // Already includes " Rs"
+                totalOrderValue: orderTotalElement.textContent 
             };
             
             orderFeedback.textContent = 'Processing your order...';
@@ -1072,21 +1072,21 @@
                     body: JSON.stringify(orderPayload),
                 });
 
-                const result = await response.json();
+                const result = await response.json(); 
 
                 if (response.ok) {
                     orderFeedback.textContent = result.message; 
                     orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
-                    currentOrder = []; // Clear the cart on successful order
-                    renderOrderSummary(); // Update the displayed cart
-                    // clearDetailsBtn.click(); // Optionally clear details too
+                    currentOrder = []; 
+                    renderOrderSummary(); 
                 } else {
-                    orderFeedback.textContent = result.message || 'Error placing order. Please try again.';
+                    orderFeedback.textContent = result.message || `Error: ${response.status} - ${response.statusText}`;
                     orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                    console.error('Backend error:', result);
                 }
-            } catch (error) {
+            } catch (error) { 
                 console.error('Error sending order to backend:', error);
-                orderFeedback.textContent = 'An unexpected error occurred. Please try again.';
+                orderFeedback.textContent = 'An unexpected error occurred. Please check your connection or try again later.';
                 orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
             }
             setTimeout(() => orderFeedback.textContent = '', 7000); 
