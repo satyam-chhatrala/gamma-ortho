@@ -564,7 +564,7 @@
 
     <script>
         const GST_RATE = 0.12; // 12% GST, configurable
-        const BACKEND_URL = 'https://gamma-ortho-api.onrender.com'; // REPLACE with your actual deployed backend URL
+        const BACKEND_URL = 'https://gamma-ortho-api.onrender.com'; // <<<< IMPORTANT: REPLACE with your actual deployed backend URL
 
         // --- Sample Data for Locations and Country Codes ---
         const countryCodes = [
@@ -1062,6 +1062,9 @@
             
             orderFeedback.textContent = 'Processing your order...';
             orderFeedback.className = 'text-center text-sm mt-4 text-sky-400';
+            console.log("Sending order to:", `${BACKEND_URL}/api/place-order`); // Log the URL
+            console.log("Order Payload:", JSON.stringify(orderPayload, null, 2)); // Log the payload
+
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/place-order`, { 
@@ -1071,8 +1074,23 @@
                     },
                     body: JSON.stringify(orderPayload),
                 });
+                
+                console.log("Response Status:", response.status);
+                const responseText = await response.text(); // Get raw response text
+                console.log("Raw Response Text:", responseText);
 
-                const result = await response.json(); 
+
+                let result;
+                try {
+                    result = JSON.parse(responseText); // Try to parse as JSON
+                } catch (e) {
+                    console.error("Failed to parse response as JSON:", e);
+                    orderFeedback.textContent = 'Received an invalid response from the server. Please try again.';
+                    orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                    setTimeout(() => orderFeedback.textContent = '', 7000);
+                    return;
+                }
+
 
                 if (response.ok) {
                     orderFeedback.textContent = result.message; 
@@ -1082,10 +1100,10 @@
                 } else {
                     orderFeedback.textContent = result.message || `Error: ${response.status} - ${response.statusText}`;
                     orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
-                    console.error('Backend error:', result);
+                    console.error('Backend error details:', result);
                 }
             } catch (error) { 
-                console.error('Error sending order to backend:', error);
+                console.error('Fetch Error (Network or other issue):', error);
                 orderFeedback.textContent = 'An unexpected error occurred. Please check your connection or try again later.';
                 orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
             }
