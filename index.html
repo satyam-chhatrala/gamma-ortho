@@ -564,6 +564,7 @@
 
     <script>
         const GST_RATE = 0.12; // 12% GST, configurable
+        const BACKEND_URL = 'http://localhost:3001'; // Change to your deployed backend URL in production
 
         // --- Sample Data for Locations and Country Codes ---
         const countryCodes = [
@@ -835,7 +836,7 @@
         const customerPincodeInput = document.getElementById('customer-pincode');
 
         const orderFeedback = document.getElementById('order-feedback');
-        const companyEmail = 'sales@gammaortho.com';
+        const companyEmail = 'sales@gammaortho.com'; // Company's email for receiving orders
 
         function renderOrderSummary() {
             orderItemsContainer.innerHTML = '';
@@ -1012,7 +1013,7 @@
             }
         });
 
-        placeOrderBtn.addEventListener('click', () => {
+        placeOrderBtn.addEventListener('click', async () => { // Added async
             const customerName = customerNameInput.value.trim();
             const customerEmail = customerEmailInput.value.trim();
             const mobileCode = customerMobileCodeInput.value;
@@ -1043,42 +1044,52 @@
                 return;
             }
 
-            let emailBody = `New Orthopedic Instrument Order Request:\n\n`;
-            emailBody += `Customer Details:\n`;
-            emailBody += `-------------------------------------\n`;
-            emailBody += `Name: ${customerName}\n`;
-            emailBody += `Email: ${customerEmail}\n`;
-            emailBody += `Mobile: ${mobileCode} ${mobileNumber}\n`;
-            if (whatsappNumber) {
-                emailBody += `WhatsApp: ${whatsappCode} ${whatsappNumber}\n`;
-            }
-            emailBody += `Address: ${address}\n`;
-            emailBody += `City / District: ${city}\n`; 
-            emailBody += `State: ${state}\n`;
-            emailBody += `Country: ${country}\n`;
-            emailBody += `Pincode: ${pincode}\n\n`;
+            const orderPayload = {
+                orderItems: currentOrder,
+                customerName: customerName,
+                customerEmail: customerEmail,
+                mobileCode: mobileCode,
+                mobileNumber: mobileNumber,
+                whatsappCode: whatsappCode,
+                whatsappNumber: whatsappNumber,
+                address: address,
+                city: city,
+                state: state,
+                country: country,
+                pincode: pincode,
+                totalOrderValue: orderTotalElement.textContent // Already includes " Rs"
+            };
             
-            emailBody += `Order Items:\n`;
-            emailBody += `-------------------------------------\n`;
-            currentOrder.forEach(productGroup => {
-                emailBody += `Product: ${productGroup.baseProductName}\n`;
-                productGroup.variants.forEach(variant => {
-                    emailBody += `  - Dimension: ${variant.dimension}\n`;
-                    emailBody += `    Qty: ${variant.quantity}\n`;
-                    emailBody += `    Base Price/Unit: ${variant.basePrice.toFixed(2)} Rs\n`;
-                    emailBody += `    GST/Unit (${(variant.gstRate * 100).toFixed(0)}%): ${(variant.basePrice * variant.gstRate).toFixed(2)} Rs\n`;
-                    emailBody += `    Total Price/Unit (incl. GST): ${variant.priceIncGst.toFixed(2)} Rs\n`;
-                    emailBody += `    Subtotal for this variant (incl. GST): ${(variant.priceIncGst * variant.quantity).toFixed(2)} Rs\n\n`;
-                });
-            });
-            emailBody += `-------------------------------------\nTotal Order Value (Incl. GST): ${orderTotalElement.textContent}\n\n`;
-            emailBody += `Please contact the customer to confirm the order and discuss further details.\n\n`;
-            emailBody += `Thank you,\nGamma Ortho Instruments Website`;
+            orderFeedback.textContent = 'Processing your order...';
+            orderFeedback.className = 'text-center text-sm mt-4 text-sky-400';
 
-            const mailtoLink = `mailto:${companyEmail}?subject=${encodeURIComponent('New Order Inquiry from Gamma Ortho Instruments')}&body=${encodeURIComponent(emailBody)}`;
-            window.location.href = mailtoLink;
-            orderFeedback.textContent = 'Your email client should now open. Please send the email to finalize your order inquiry.';
-            orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/place-order`, { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(orderPayload),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    orderFeedback.textContent = result.message; 
+                    orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
+                    currentOrder = []; // Clear the cart on successful order
+                    renderOrderSummary(); // Update the displayed cart
+                    // clearDetailsBtn.click(); // Optionally clear details too
+                } else {
+                    orderFeedback.textContent = result.message || 'Error placing order. Please try again.';
+                    orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                }
+            } catch (error) {
+                console.error('Error sending order to backend:', error);
+                orderFeedback.textContent = 'An unexpected error occurred. Please try again.';
+                orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+            }
+            setTimeout(() => orderFeedback.textContent = '', 7000); 
         });
 
         clearOrderBtn.addEventListener('click', () => {
