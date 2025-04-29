@@ -230,7 +230,7 @@ app.listen(port, () => {
 
 **Step 3: Commit Changes and Redeploy Backend**
 
-1.  Go to your `gamma-ortho-backend` repository on GitHub.
+1.  Go to your `gamma-ortho` repository on GitHub.
 2.  Edit `server.js` and replace its content with the code above.
 3.  Commit the changes with a message like "Update CORS configuration and add logging."
 4.  Render.com should automatically detect this change and start a new deployment. Monitor the "Events" and "Logs" on Render.
