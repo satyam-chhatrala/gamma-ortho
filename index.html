@@ -159,6 +159,12 @@
         #filter-toggle-button:hover {
             background-color: #4b5563; 
         }
+        /* Contact form feedback message */
+        #contact-form-feedback {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.875rem; /* text-sm */
+        }
     </style>
 </head>
 <body class="bg-black text-gray-200">
@@ -493,7 +499,7 @@
             <div class="container mx-auto px-6">
                  <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-100 mb-12">For Inquiry, contact us</h2>
                 <div class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-lg">
-                    <form action="#" method="POST"> 
+                    <form id="inquiry-form"> 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label for="contact-name" class="block text-gray-300 font-medium mb-2">Full Name</label>
@@ -535,7 +541,7 @@
                         <div class="mb-6">
                             <label for="contact-files" class="block text-gray-300 font-medium mb-2">Attach Files (Optional)</label>
                             <input type="file" id="contact-files" name="contact-files[]" class="file-input input-base-style" multiple>
-                            <p class="text-xs text-gray-400 mt-1">You can select multiple files. Note: File upload is for demonstration and not functional in this version.</p>
+                            <p class="text-xs text-gray-400 mt-1">You can select multiple files. Max 5MB each.</p>
                         </div>
                         <div class="text-center">
                             <button type="submit" class="bg-sky-600 text-white font-semibold px-8 py-3 rounded-lg shadow-md hover:bg-sky-700 transition duration-300 w-full md:w-auto">
@@ -543,6 +549,7 @@
                             </button>
                         </div>
                     </form>
+                    <p id="contact-form-feedback" class="contact-form-feedback"></p>
                     <div class="mt-10 text-center text-gray-300">
                         <p class="text-lg font-medium">Or reach us directly:</p>
                         <p class="mt-2"><i class="fas fa-phone-alt mr-2 text-sky-400"></i> +91-99986 00047</p>
@@ -1062,12 +1069,12 @@
             
             orderFeedback.textContent = 'Processing your order...';
             orderFeedback.className = 'text-center text-sm mt-4 text-sky-400';
-            console.log("Sending order to:", `${BACKEND_URL}/api/place-order`); // Log the URL
-            console.log("Order Payload:", JSON.stringify(orderPayload, null, 2)); // Log the payload
+            console.log("Sending order to:", `${BACKEND_URL}/api/orders/place-order`); 
+            console.log("Order Payload:", JSON.stringify(orderPayload, null, 2));
 
 
             try {
-                const response = await fetch(`${BACKEND_URL}/api/place-order`, { 
+                const response = await fetch(`${BACKEND_URL}/api/orders/place-order`, { 
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1076,13 +1083,13 @@
                 });
                 
                 console.log("Response Status:", response.status);
-                const responseText = await response.text(); // Get raw response text
+                const responseText = await response.text(); 
                 console.log("Raw Response Text:", responseText);
 
 
                 let result;
                 try {
-                    result = JSON.parse(responseText); // Try to parse as JSON
+                    result = JSON.parse(responseText); 
                 } catch (e) {
                     console.error("Failed to parse response as JSON:", e);
                     orderFeedback.textContent = 'Received an invalid response from the server. Please try again.';
@@ -1162,6 +1169,64 @@
             });
         });
 
+        // --- Contact Form Submission Logic ---
+        const inquiryForm = document.getElementById('inquiry-form');
+        const contactFormFeedback = document.getElementById('contact-form-feedback');
+
+        if(inquiryForm) {
+            inquiryForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                contactFormFeedback.textContent = 'Submitting your inquiry...';
+                contactFormFeedback.className = 'contact-form-feedback text-sky-400';
+
+                const formData = new FormData(this);
+                // The 'contact-files[]' name in HTML will be handled by multer as req.files
+                
+                console.log("Sending inquiry to:", `${BACKEND_URL}/api/inquiry/submit`);
+                for (var pair of formData.entries()) { // Log FormData entries
+                    console.log(pair[0]+ ': '+ pair[1]); 
+                }
+
+
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/inquiry/submit`, {
+                        method: 'POST',
+                        body: formData, 
+                    });
+                    
+                    console.log("Inquiry Response Status:", response.status);
+                    const responseText = await response.text();
+                    console.log("Inquiry Raw Response Text:", responseText);
+
+                    let result;
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error("Failed to parse inquiry response as JSON:", parseError);
+                        contactFormFeedback.textContent = 'Received an invalid response from the server.';
+                        contactFormFeedback.className = 'contact-form-feedback text-red-500';
+                        setTimeout(() => contactFormFeedback.textContent = '', 7000);
+                        return;
+                    }
+
+                    if (response.ok) {
+                        contactFormFeedback.textContent = result.message;
+                        contactFormFeedback.className = 'contact-form-feedback text-green-500';
+                        this.reset(); 
+                    } else {
+                        contactFormFeedback.textContent = result.message || `Error: ${response.status}`;
+                        contactFormFeedback.className = 'contact-form-feedback text-red-500';
+                    }
+                } catch (error) {
+                    console.error('Error submitting inquiry form:', error);
+                    contactFormFeedback.textContent = 'An unexpected error occurred. Please try again.';
+                    contactFormFeedback.className = 'contact-form-feedback text-red-500';
+                }
+                setTimeout(() => contactFormFeedback.textContent = '', 7000);
+            });
+        }
+
+
         // --- General Page Logic ---
         const menuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
@@ -1206,14 +1271,6 @@
             updateActiveNavLink(); 
             renderOrderSummary(); 
             applyFilters(); 
-            const contactForm = document.querySelector('#contact form');
-            if (contactForm) {
-                contactForm.addEventListener('submit', function(e) {
-                    e.preventDefault(); 
-                    alert('Inquiry form submitted (Demo - No actual submission).');
-                    this.reset(); 
-                });
-            }
         });
         window.addEventListener('scroll', updateActiveNavLink); 
 
