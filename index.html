@@ -167,10 +167,10 @@
         }
         .product-card-image { 
             width: 100%; 
-            height: 22rem; /* Increased height for a more portrait-friendly display area (352px) */
-            object-fit: contain; /* Ensures the whole image is visible, maintaining aspect ratio */
+            height: 22rem; 
+            object-fit: contain; 
             padding: 1rem; 
-            background-color: #374151; /* Slightly lighter background for image container */
+            background-color: #374151; 
         }
     </style>
 </head>
@@ -461,46 +461,86 @@
         const GST_RATE = 0.12; 
         const BACKEND_URL = 'https://gamma-ortho.onrender.com'; 
 
-        let allFetchedProducts = [];
+        let allFetchedProducts = []; // Stores all products fetched from backend
 
-        const countryCodes = [ /* ... (as before) ... */ ];
-        const locationData = { /* ... (as before) ... */ };
+        // --- DOM Elements (Customer Site) ---
+        const productListContainer = document.getElementById('product-list-container');
+        const productsLoadingMessage = document.getElementById('products-loading-message');
+        const productSearchInput = document.getElementById('product-search-input');
+        const productTypeFilters = document.querySelectorAll('.product-type-filter');
+        const filterToggleButton = document.getElementById('filter-toggle-button');
+        const filterOptionsContainer = document.getElementById('product-filter-options-container');
+        
+        const orderItemsContainer = document.getElementById('order-items-container');
+        const orderTotalElement = document.getElementById('order-total');
+        const placeOrderBtn = document.getElementById('place-order-btn');
+        const clearOrderBtn = document.getElementById('clear-order-btn');
+        const clearDetailsBtn = document.getElementById('clear-details-btn'); 
+        const customerNameInput = document.getElementById('customer-name');
+        const customerEmailInput = document.getElementById('customer-email');
+        const customerMobileCodeInput = document.getElementById('customer-mobile-code');
+        const customerMobileInput = document.getElementById('customer-mobile');
+        const customerWhatsappCodeInput = document.getElementById('customer-whatsapp-code');
+        const customerWhatsappInput = document.getElementById('customer-whatsapp');
+        const customerAddressInput = document.getElementById('customer-address');
+        const customerPincodeInput = document.getElementById('customer-pincode');
+        const orderFeedback = document.getElementById('order-feedback');
+        const countrySelect = document.getElementById('customer-country');
+        const stateSelect = document.getElementById('customer-state');
+        const citySelect = document.getElementById('customer-city'); 
+
+        let currentOrder = []; 
+        
+        // --- Sample Data (already in your code, kept for reference if needed by other functions) ---
+        const countryCodes = [ { name: "IND", code: "+91" }, { name: "USA", code: "+1" }, { name: "UK", code: "+44" }];
+        const locationData = { /* ... your existing locationData ... */ };
+
 
         function populateDimensionDropdownsOnCard(cardElement, dimensions, productId) {
             const selectElement = cardElement.querySelector(`#dim-${productId}`);
             const priceDisplayElement = cardElement.querySelector(`#price-display-${productId}`);
             const gstRateTextElements = cardElement.querySelectorAll('.gst-rate-text');
 
-            if (selectElement && priceDisplayElement && dimensions && dimensions.length > 0) {
-                gstRateTextElements.forEach(el => el.textContent = (GST_RATE * 100).toFixed(0));
-                selectElement.innerHTML = ''; 
-
-                dimensions.forEach((dim, index) => {
-                    const option = document.createElement('option');
-                    option.value = dim.dimensionName;
-                    option.textContent = dim.dimensionName;
-                    option.dataset.basePrice = dim.basePrice;
-                    selectElement.appendChild(option);
-
-                    if (index === 0) {
-                        priceDisplayElement.textContent = parseFloat(dim.basePrice).toFixed(2);
-                    }
-                });
-
-                selectElement.addEventListener('change', function() {
-                    const selectedOption = this.options[this.selectedIndex];
-                    const basePrice = parseFloat(selectedOption.dataset.basePrice);
-                    priceDisplayElement.textContent = basePrice.toFixed(2);
-                });
-            } else if (priceDisplayElement) {
-                 priceDisplayElement.textContent = "N/A"; 
+            if (!selectElement || !priceDisplayElement) {
+                console.warn(`Missing select or price display for product ${productId}`);
+                return;
             }
+            if (!dimensions || dimensions.length === 0) {
+                selectElement.innerHTML = '<option value="">N/A</option>';
+                selectElement.disabled = true;
+                priceDisplayElement.textContent = "N/A";
+                if (gstRateTextElements.length > 0) gstRateTextElements.forEach(el => el.textContent = 'N/A');
+                return;
+            }
+            
+            selectElement.disabled = false;
+            gstRateTextElements.forEach(el => el.textContent = (GST_RATE * 100).toFixed(0));
+            selectElement.innerHTML = ''; 
+
+            dimensions.forEach((dim, index) => {
+                const option = document.createElement('option');
+                option.value = dim.dimensionName;
+                option.textContent = dim.dimensionName;
+                option.dataset.basePrice = dim.basePrice;
+                selectElement.appendChild(option);
+
+                if (index === 0) {
+                    priceDisplayElement.textContent = parseFloat(dim.basePrice).toFixed(2);
+                }
+            });
+
+            selectElement.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const basePrice = parseFloat(selectedOption.dataset.basePrice);
+                priceDisplayElement.textContent = basePrice.toFixed(2);
+            });
         }
         
-        const productListContainer = document.getElementById('product-list-container');
-        const productsLoadingMessage = document.getElementById('products-loading-message');
-
         function renderProducts(productsToRender) {
+            if (!productListContainer) {
+                console.error("Product list container not found!");
+                return;
+            }
             productListContainer.innerHTML = ''; 
             if (!productsToRender || productsToRender.length === 0) {
                 productListContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">No products found matching your criteria.</p>';
@@ -510,12 +550,12 @@
             productsToRender.forEach(product => {
                 const card = document.createElement('div');
                 card.className = 'product-card bg-gray-800 rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300';
-                card.dataset.productId = product._id;
+                card.dataset.productId = product._id; // Store product ID for cart logic
                 card.dataset.productName = product.name.toLowerCase(); 
                 card.dataset.productType = product.productType.toLowerCase(); 
 
                 let initialBasePrice = "N/A";
-                if (product.dimensions && product.dimensions.length > 0) {
+                if (product.dimensions && product.dimensions.length > 0 && product.dimensions[0].basePrice !== undefined) {
                     initialBasePrice = parseFloat(product.dimensions[0].basePrice).toFixed(2);
                 }
                 
@@ -538,7 +578,7 @@
                     </div>
                 `;
                 productListContainer.appendChild(card);
-                populateDimensionDropdownsOnCard(card, product.dimensions, product._id);
+                populateDimensionDropdownsOnCard(card, product.dimensions, product._id); // Populate dropdown for this card
 
                 card.querySelector('.add-to-order-btn').addEventListener('click', () => {
                     console.log('Add to cart clicked for product:', product.name, product._id); 
@@ -551,23 +591,22 @@
                     console.log('Selected dimension name:', selectedDimensionName, 'Quantity:', quantity); 
 
                     if (!selectedDimensionName) {
-                        orderFeedback.textContent = 'Please select a dimension for the product.';
-                        orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
-                        setTimeout(() => orderFeedback.textContent = '', 3000);
+                        if(orderFeedback) orderFeedback.textContent = 'Please select a dimension for the product.';
+                        if(orderFeedback) orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                        setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
                         return;
                     }
 
-                    // Find the full product object from allFetchedProducts to get its gstRate
                     const fullProductData = allFetchedProducts.find(p => p._id === product._id);
-                    if (!fullProductData) {
-                        console.error("Could not find full product data for ID:", product._id);
-                        orderFeedback.textContent = 'Error finding product details. Please refresh.';
-                        orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
-                        setTimeout(() => orderFeedback.textContent = '', 3000);
+                    if (!fullProductData || !fullProductData.dimensions) {
+                        console.error("Could not find full product data or dimensions for ID:", product._id, "Full data:", fullProductData);
+                        if(orderFeedback) orderFeedback.textContent = 'Error finding product details. Please refresh.';
+                        if(orderFeedback) orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                        setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
                         return;
                     }
 
-                    const selectedDimensionData = product.dimensions.find(d => d.dimensionName === selectedDimensionName);
+                    const selectedDimensionData = fullProductData.dimensions.find(d => d.dimensionName === selectedDimensionName);
                     console.log('Found dimension data:', selectedDimensionData); 
                     console.log('Product GST rate from fullProductData:', fullProductData.gstRate); 
 
@@ -582,10 +621,10 @@
                         } else if (typeof fullProductData.gstRate !== 'number') {
                             errorMsg = 'Product GST rate is missing or invalid.';
                         }
-                        orderFeedback.textContent = errorMsg;
-                        orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                        if(orderFeedback) orderFeedback.textContent = errorMsg;
+                        if(orderFeedback) orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
                         console.error("Add to cart error:", errorMsg, "Selected Dim Data:", selectedDimensionData, "GST Rate:", fullProductData.gstRate);
-                        setTimeout(() => orderFeedback.textContent = '', 3000);
+                        setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
                     }
                 });
             });
@@ -616,24 +655,16 @@
             } catch (error) {
                 console.error('Error fetching products for customer site:', error);
                 if (productsLoadingMessage) productsLoadingMessage.classList.add('hidden');
-                productListContainer.innerHTML = `<p class="text-center text-red-500 col-span-full">Error loading products. ${error.message}. Please check console for details.</p>`;
+                if(productListContainer) productListContainer.innerHTML = `<p class="text-center text-red-500 col-span-full">Error loading products. ${error.message}. Please check console for details.</p>`;
             }
         }
 
         function populateCountryCodeDropdowns() { /* ... (as before, check for null elements) ... */ }
-        const countrySelect = document.getElementById('customer-country');
-        const stateSelect = document.getElementById('customer-state');
-        const citySelect = document.getElementById('customer-city'); 
         function populateCountries() { /* ... (as before, check for null elements) ... */ }
         function populateStates(country) { /* ... (as before, check for null elements) ... */ }
         function populateCities(country, state) { /* ... (as before, check for null elements) ... */ }
         if (countrySelect) countrySelect.addEventListener('change', function() { populateStates(this.value); });
         if (stateSelect) stateSelect.addEventListener('change', function() { if (countrySelect) { populateCities(countrySelect.value, this.value); }});
-
-        const productSearchInput = document.getElementById('product-search-input');
-        const productTypeFilters = document.querySelectorAll('.product-type-filter');
-        const filterToggleButton = document.getElementById('filter-toggle-button');
-        const filterOptionsContainer = document.getElementById('product-filter-options-container');
 
         if(filterToggleButton) {
             filterToggleButton.addEventListener('click', () => {
@@ -642,7 +673,7 @@
         }
 
         function applyFiltersAndSearch() {
-            let filteredProducts = allFetchedProducts;
+            let filteredProducts = allFetchedProducts; // Start with all fetched products
             const searchTerm = productSearchInput ? productSearchInput.value.toLowerCase().trim() : "";
             
             const selectedTypes = [];
@@ -661,7 +692,7 @@
             const showAllCategories = allProductsCheckboxChecked || selectedTypes.length === 0;
             
             if (!showAllCategories && selectedTypes.length > 0) {
-                filteredProducts = allFetchedProducts.filter(product => 
+                filteredProducts = filteredProducts.filter(product => 
                     product.productType && selectedTypes.includes(product.productType.toLowerCase())
                 );
             }
@@ -688,26 +719,11 @@
                 applyFiltersAndSearch(); 
             });
         });
-
-        let currentOrder = []; 
-        const orderItemsContainer = document.getElementById('order-items-container');
-        const orderTotalElement = document.getElementById('order-total');
-        const placeOrderBtn = document.getElementById('place-order-btn');
-        const clearOrderBtn = document.getElementById('clear-order-btn');
-        const clearDetailsBtn = document.getElementById('clear-details-btn'); 
-        const customerNameInput = document.getElementById('customer-name');
-        const customerEmailInput = document.getElementById('customer-email');
-        const customerMobileCodeInput = document.getElementById('customer-mobile-code');
-        const customerMobileInput = document.getElementById('customer-mobile');
-        const customerWhatsappCodeInput = document.getElementById('customer-whatsapp-code');
-        const customerWhatsappInput = document.getElementById('customer-whatsapp');
-        const customerAddressInput = document.getElementById('customer-address');
-        const customerPincodeInput = document.getElementById('customer-pincode');
-        const orderFeedback = document.getElementById('order-feedback');
         
         function renderOrderSummary() {
+            console.log("renderOrderSummary called. currentOrder:", JSON.parse(JSON.stringify(currentOrder))); // DEBUG
             if (!orderItemsContainer || !orderTotalElement || !placeOrderBtn || !clearOrderBtn) {
-                console.error("One or more order summary DOM elements not found!");
+                console.error("One or more order summary DOM elements not found for renderOrderSummary!");
                 return;
             }
             orderItemsContainer.innerHTML = '';
@@ -773,11 +789,13 @@
 
             orderItemsContainer.appendChild(mainUl);
             orderTotalElement.textContent = `${grandTotal.toFixed(2)} Rs`;
+            console.log("Order summary rendered. Grand total:", grandTotal.toFixed(2)); // DEBUG
         }
 
         function addItemToOrder(baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate) { 
             console.log('addItemToOrder called with:', {baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate}); 
-            // Ensure gstRate is a number, fallback to global GST_RATE if undefined or not a number
+            console.log("currentOrder BEFORE add:", JSON.parse(JSON.stringify(currentOrder))); // DEBUG
+            
             const effectiveGstRate = (typeof gstRate === 'number' && !isNaN(gstRate)) ? gstRate : GST_RATE;
             console.log('Effective GST Rate used:', effectiveGstRate);
 
@@ -790,6 +808,7 @@
                 let variant = productGroup.variants.find(v => v.variantId === variantId);
                 if (variant) { 
                     variant.quantity += quantity;
+                     console.log("Updated quantity for existing variant:", variantId, "New Qty:", variant.quantity); // DEBUG
                 } else { 
                     productGroup.variants.push({ 
                         variantId: variantId,
@@ -799,6 +818,7 @@
                         priceIncGst: priceIncGst, 
                         quantity: quantity 
                     });
+                    console.log("Added new variant to existing product group:", variantId); // DEBUG
                 }
             } else { 
                 currentOrder.push({
@@ -813,20 +833,77 @@
                         quantity: quantity 
                     }]
                 });
+                console.log("Added new product group with variant:", baseProductId, variantId); // DEBUG
             }
-            console.log("currentOrder after addItemToOrder:", JSON.parse(JSON.stringify(currentOrder))); 
+            console.log("currentOrder AFTER add:", JSON.parse(JSON.stringify(currentOrder))); // DEBUG
+
             if(orderFeedback) {
                 orderFeedback.textContent = `Added ${quantity} x ${baseProductName} (${selectedDimensionName}) to your cart.`;
                 orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
-                setTimeout(() => orderFeedback.textContent = '', 3000);
+                setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
             }
             renderOrderSummary();
         }
-        function removeItemFromOrder(variantIdToRemove) { /* ... (as before) ... */ }
+        
+        function removeItemFromOrder(variantIdToRemove) {
+            console.log("removeItemFromOrder called for variantId:", variantIdToRemove); // DEBUG
+            console.log("currentOrder BEFORE remove:", JSON.parse(JSON.stringify(currentOrder))); // DEBUG
+            let productGroupIndex = -1;
+            let variantIndexToRemove = -1;
 
-        if(orderItemsContainer) orderItemsContainer.addEventListener('click', (event) => { /* ... (as before) ... */ });
+            for (let i = 0; i < currentOrder.length; i++) {
+                variantIndexToRemove = currentOrder[i].variants.findIndex(v => v.variantId === variantIdToRemove);
+                if (variantIndexToRemove > -1) {
+                    productGroupIndex = i;
+                    break;
+                }
+            }
+            console.log(`Found productGroupIndex: ${productGroupIndex}, variantIndexToRemove: ${variantIndexToRemove}`); // DEBUG
+
+            if (productGroupIndex > -1 && variantIndexToRemove > -1) {
+                const removedItemName = `${currentOrder[productGroupIndex].baseProductName} (${currentOrder[productGroupIndex].variants[variantIndexToRemove].dimension})`;
+                currentOrder[productGroupIndex].variants.splice(variantIndexToRemove, 1);
+                console.log("Variant removed. Variants left in group:", currentOrder[productGroupIndex].variants.length); // DEBUG
+
+                if (currentOrder[productGroupIndex].variants.length === 0) {
+                    currentOrder.splice(productGroupIndex, 1);
+                    console.log("Product group removed as it's empty."); // DEBUG
+                }
+                
+                if(orderFeedback) {
+                    orderFeedback.textContent = `Removed ${removedItemName} from your order.`;
+                    orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                    setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
+                }
+            } else {
+                 console.warn("Could not find item to remove with variantId:", variantIdToRemove); // DEBUG
+            }
+            console.log("currentOrder AFTER remove:", JSON.parse(JSON.stringify(currentOrder))); // DEBUG
+            renderOrderSummary();
+        }
+
+        if(orderItemsContainer) orderItemsContainer.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('.remove-item-btn');
+            if (removeButton) {
+                const variantId = removeButton.dataset.variantId;
+                console.log("Remove button clicked for variantId:", variantId); // DEBUG
+                removeItemFromOrder(variantId);
+            }
+        });
+
         if(placeOrderBtn) placeOrderBtn.addEventListener('click', async () => { /* ... (as before, ensure BACKEND_URL is used) ... */ });
-        if(clearOrderBtn) clearOrderBtn.addEventListener('click', () => { /* ... (as before) ... */ });
+        
+        if(clearOrderBtn) clearOrderBtn.addEventListener('click', () => { 
+            console.log("Clear Order button clicked."); // DEBUG
+            currentOrder = [];
+            if(orderFeedback) {
+                orderFeedback.textContent = 'Order cleared.';
+                orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
+            }
+            renderOrderSummary();
+        });
+
         if(clearDetailsBtn) clearDetailsBtn.addEventListener('click', () => { /* ... (as before) ... */ });
         
         const paymentButtons = document.querySelectorAll('.payment-btn');
@@ -868,8 +945,10 @@
                 contactForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     const feedbackEl = document.getElementById('contact-form-feedback');
-                    feedbackEl.textContent = 'Submitting your inquiry...';
-                    feedbackEl.className = 'contact-form-feedback text-sky-400';
+                    if(feedbackEl) {
+                        feedbackEl.textContent = 'Submitting your inquiry...';
+                        feedbackEl.className = 'contact-form-feedback text-sky-400';
+                    }
 
                     const formData = new FormData(this);
                     
@@ -882,19 +961,25 @@
                         const result = await response.json();
 
                         if (response.ok) {
-                            feedbackEl.textContent = result.message;
-                            feedbackEl.className = 'contact-form-feedback text-green-500';
+                            if(feedbackEl) {
+                                feedbackEl.textContent = result.message;
+                                feedbackEl.className = 'contact-form-feedback text-green-500';
+                            }
                             this.reset(); 
                         } else {
-                            feedbackEl.textContent = result.message || `Error: ${response.status}`;
-                            feedbackEl.className = 'contact-form-feedback text-red-500';
+                            if(feedbackEl) {
+                                feedbackEl.textContent = result.message || `Error: ${response.status}`;
+                                feedbackEl.className = 'contact-form-feedback text-red-500';
+                            }
                         }
                     } catch (error) {
                         console.error('Error submitting inquiry form:', error);
-                        feedbackEl.textContent = 'An unexpected error occurred. Please try again.';
-                        feedbackEl.className = 'contact-form-feedback text-red-500';
+                        if(feedbackEl) {
+                            feedbackEl.textContent = 'An unexpected error occurred. Please try again.';
+                            feedbackEl.className = 'contact-form-feedback text-red-500';
+                        }
                     }
-                    setTimeout(() => feedbackEl.textContent = '', 7000);
+                    if(feedbackEl) setTimeout(() => feedbackEl.textContent = '', 7000);
                 });
             }
         });
