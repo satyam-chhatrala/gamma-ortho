@@ -146,16 +146,17 @@
             <h2 class="text-2xl font-semibold mb-6 text-gray-100">Existing Products</h2>
             <div id="existing-products-list" class="bg-gray-800 p-4 rounded-md">
                 <p class="text-center text-gray-400">Loading products...</p>
-            </div>
+                </div>
         </section>
     </div>
 
     <script>
-        const BACKEND_URL = 'https://gamma-ortho.onrender.com'; 
+        const BACKEND_URL = 'https://gamma-ortho-api.onrender.com'; // Ensure this is your deployed backend URL
         const GST_RATE_DEFAULT = 0.12; 
 
         const productForm = document.getElementById('product-form');
         const formTitle = document.getElementById('form-title');
+        const productFormSection = document.getElementById('product-form-section'); // Define productFormSection
         const productIdInput = document.getElementById('product-id');
         const productNameInput = document.getElementById('product-name');
         const productDescriptionInput = document.getElementById('product-description');
@@ -244,34 +245,34 @@
             adminFeedback.textContent = 'Processing...';
             adminFeedback.className = 'text-sky-400';
 
-            const formData = new FormData();
+            const formData = new FormData(); 
+
             formData.append('name', productNameInput.value);
             formData.append('description', productDescriptionInput.value);
             
-            let productType = productTypeSelect.value;
-            if (productType === 'other') {
+            // Send productTypeSelect and newProductType for backend to derive finalProductType
+            formData.append('productTypeSelect', productTypeSelect.value);
+            if (productTypeSelect.value === 'other') {
                 const newType = newProductTypeInput.value.trim();
-                if (!newType) {
+                 if (!newType) {
                     displayFeedback('Please specify the new product type.', 'error');
                     return;
                 }
-                productType = newType.toLowerCase().replace(/\s+/g, '-');
+                formData.append('newProductType', newType);
             }
-            formData.append('productTypeSelect', productTypeSelect.value); // Send the select value
-            if (productTypeSelect.value === 'other') {
-                formData.append('newProductType', newProductTypeInput.value.trim()); // Send the new type input value
-            }
-            // The backend will use these two to determine the final productType
             
             formData.append('gstRate', productGstRateInput.value);
-            formData.append('isActive', productIsActiveCheckbox.checked);
+            formData.append('isActive', productIsActiveCheckbox.checked.toString()); // Send as string 'true' or 'false'
 
             const dimensionElements = dimensionsContainer.querySelectorAll('.dimension-entry');
-            if (dimensionElements.length === 0) {
+            if (dimensionElements.length === 0 && !editMode) { // Only enforce if creating, not necessarily if editing (could update other fields)
                 displayFeedback('Please add at least one dimension and price.', 'error');
                 return;
             }
             dimensionElements.forEach((entry, index) => {
+                // FormData expects names like dimensions[0][dimensionName] for backend array parsing with some middleware
+                // Or send as JSON string: formData.append('dimensions', JSON.stringify(arrayOfDimensionObjects));
+                // For simplicity with FormData and multer, we send indexed fields. Backend will reconstruct.
                 formData.append(`dimensions[${index}][dimensionName]`, entry.querySelector(`input[name^="dimensionName-"]`).value);
                 formData.append(`dimensions[${index}][basePrice]`, entry.querySelector(`input[name^="basePrice-"]`).value);
             });
@@ -279,7 +280,6 @@
             if (productBaseImageInput.files[0]) {
                 formData.append('baseImage', productBaseImageInput.files[0]);
             } else if (editMode && existingBaseImageUrlInput.value) {
-                // If in edit mode and no new base image, send existing URL to potentially keep it
                 formData.append('baseImageURL', existingBaseImageUrlInput.value);
             }
 
@@ -289,10 +289,7 @@
                     formData.append('additionalImages', productAdditionalImagesInput.files[i]);
                 }
             }
-            // Note: Handling existing additional images during an update is more complex
-            // (e.g., sending a list of URLs to keep, deleting others). 
-            // This form currently replaces all additional images if new ones are selected.
-
+            
             let url = `${BACKEND_URL}/api/admin/products`;
             let method = 'POST';
 
@@ -301,12 +298,13 @@
                 method = 'PUT';
             }
             console.log(`Submitting to ${url} with method ${method}`);
+            // for (var pair of formData.entries()) { console.log(pair[0]+ ', ' + pair[1]); }
+
 
             try {
                 const response = await fetch(url, {
                     method: method,
                     body: formData,
-                    // DO NOT set Content-Type header for FormData, browser does it.
                 });
 
                 const result = await response.json();
@@ -333,8 +331,12 @@
             try {
                 const response = await fetch(`${BACKEND_URL}/api/admin/products`);
                 if (!response.ok) {
-                    const errorResult = await response.json();
-                    throw new Error(errorResult.message || `HTTP error! status: ${response.status}`);
+                    let errorText = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorResult = await response.json();
+                        errorText = errorResult.message || errorText;
+                    } catch (e) { /* Ignore if response is not JSON */ }
+                    throw new Error(errorText);
                 }
                 const products = await response.json();
                 
@@ -352,7 +354,7 @@
                                     <span class="text-xs ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span>
                                 </h4>
                                 <p class="text-sm text-gray-400">Type: ${product.productType}</p>
-                                <p class="text-sm text-gray-400">${product.dimensions.length} dimension(s)</p>
+                                <p class="text-sm text-gray-400">${product.dimensions ? product.dimensions.length : 0} dimension(s)</p>
                                 ${product.baseImageURL ? `<img src="${product.baseImageURL}" alt="${product.name}" class="image-preview mt-1">` : ''}
                             </div>
                             <div>
@@ -365,7 +367,6 @@
                 productsHtml += '</ul>';
                 existingProductsList.innerHTML = productsHtml;
 
-                // Add event listeners for new edit/delete buttons
                 document.querySelectorAll('.edit-product-btn').forEach(button => {
                     button.addEventListener('click', handleEditProduct);
                 });
@@ -394,38 +395,36 @@
 
                 formTitle.textContent = 'Edit Product';
                 productIdInput.value = product._id;
-                productNameInput.value = product.name;
-                productDescriptionInput.value = product.description;
+                productNameInput.value = product.name || '';
+                productDescriptionInput.value = product.description || '';
                 
-                // Set product type dropdown
                 const existingTypeOption = Array.from(productTypeSelect.options).find(opt => opt.value === product.productType);
                 if (existingTypeOption) {
                     productTypeSelect.value = product.productType;
                     newProductTypeContainer.style.display = 'none';
                     newProductTypeInput.required = false;
                     newProductTypeInput.value = '';
-                } else { // Type is not in standard list, must be "other"
+                } else { 
                     productTypeSelect.value = 'other';
                     newProductTypeContainer.style.display = 'block';
-                    newProductTypeInput.value = product.productType; // Display the custom type
+                    newProductTypeInput.value = product.productType || ''; 
                     newProductTypeInput.required = true;
                 }
 
-                productGstRateInput.value = product.gstRate;
-                productIsActiveCheckbox.checked = product.isActive;
+                productGstRateInput.value = product.gstRate !== undefined ? product.gstRate : GST_RATE_DEFAULT;
+                productIsActiveCheckbox.checked = product.isActive === undefined ? true : product.isActive;
 
-                dimensionsContainer.innerHTML = ''; // Clear existing dimension fields
+                dimensionsContainer.innerHTML = ''; 
                 if (product.dimensions && product.dimensions.length > 0) {
                     product.dimensions.forEach(dim => addDimensionEntry(dim));
                 } else {
-                    addDimensionEntry(); // Add one empty if none exist
+                    addDimensionEntry(); 
                 }
 
-                // Display existing images (conceptual)
                 baseImagePreviewContainer.innerHTML = '';
                 if (product.baseImageURL) {
                     baseImagePreviewContainer.innerHTML = `<img src="${product.baseImageURL}" alt="Base Image" class="image-preview">`;
-                    existingBaseImageUrlInput.value = product.baseImageURL; // Store for submission if not changed
+                    existingBaseImageUrlInput.value = product.baseImageURL; 
                 } else {
                      existingBaseImageUrlInput.value = '';
                 }
@@ -436,7 +435,6 @@
                         additionalImagesPreviewContainer.innerHTML += `<img src="${url}" alt="Additional Image" class="image-preview">`;
                     });
                 }
-                // Clear file inputs as we can't pre-populate them
                 productBaseImageInput.value = '';
                 productAdditionalImagesInput.value = '';
 
@@ -448,7 +446,9 @@
                 editMode = true;
                 adminFeedback.textContent = '';
                 adminFeedback.className = '';
-                window.scrollTo({ top: productFormSection.offsetTop, behavior: 'smooth' });
+                if (productFormSection) { // Check if productFormSection is defined
+                    window.scrollTo({ top: productFormSection.offsetTop - 20, behavior: 'smooth' });
+                }
 
 
             } catch (error) {
@@ -471,13 +471,12 @@
             try {
                 const response = await fetch(`${BACKEND_URL}/api/admin/products/${productId}`, {
                     method: 'DELETE',
-                    // Add Authorization header here if/when admin auth is implemented
                 });
                 const result = await response.json();
 
                 if (response.ok) {
                     displayFeedback(result.message || 'Product deleted successfully!', 'success');
-                    fetchAndDisplayProducts(); // Refresh the list
+                    fetchAndDisplayProducts(); 
                 } else {
                     displayFeedback(`Error: ${result.message || response.statusText}`, 'error');
                 }
@@ -488,8 +487,8 @@
         }
         
         // Initial setup
-        resetFormToCreateMode(); // Ensure form is in "Add" mode initially
-        fetchAndDisplayProducts(); // Load products when the page loads
+        resetFormToCreateMode(); 
+        fetchAndDisplayProducts(); 
 
     </script>
 </body>
