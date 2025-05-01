@@ -212,7 +212,7 @@
                 }
                 productType = newType.toLowerCase().replace(/\s+/g, '-'); // Sanitize
             }
-            formData.append('productType', productType);
+            formData.append('productTypeSelect', productType);
             
             formData.append('gstRate', document.getElementById('product-gst-rate').value);
             formData.append('isActive', document.getElementById('product-is-active').checked);
