@@ -1,6 +1,6 @@
 // server.js
 const express = require('express');
-const mongoose = require('mongoose'); // Import Mongoose
+const mongoose = require('mongoose'); 
 const cors = require('cors'); 
 const app = express();
 
@@ -8,6 +8,7 @@ const app = express();
 const orderRoutes = require('./routes/orderRoutes'); 
 const inquiryRoutes = require('./routes/inquiryRoutes'); 
 const adminProductRoutes = require('./routes/adminProductRoutes'); 
+const publicProductRoutes = require('./routes/publicProductRoutes'); // Import public product routes
 
 const port = process.env.PORT || 3001; 
 const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER; 
@@ -16,8 +17,8 @@ const OWNER_EMAIL = process.env.OWNER_EMAIL;
 const COMPANY_NAME = 'Gamma Ortho Instruments';
 
 // --- Environment Variables for CORS ---
-const CUSTOMER_FRONTEND_URL = process.env.FRONTEND_URL; // Your existing Netlify site for customers
-const ADMIN_FRONTEND_URL = process.env.ADMIN_FRONTEND_URL; // Your new Netlify site for the admin panel
+const CUSTOMER_FRONTEND_URL = process.env.FRONTEND_URL; 
+const ADMIN_FRONTEND_URL = process.env.ADMIN_FRONTEND_URL; 
 
 console.log("--------------------------------------------------");
 console.log("Backend Server Starting...");
@@ -27,7 +28,25 @@ console.log("ADMIN_FRONTEND_URL for CORS (from env):", ADMIN_FRONTEND_URL);
 console.log("MONGODB_URI configured:", process.env.MONGODB_URI ? "Yes" : "No - Database connection will fail!");
 console.log("SENDER_EMAIL_USER configured:", SENDER_EMAIL_USER ? "Yes" : "No - Email sending will fail if credentials missing");
 console.log("OWNER_EMAIL configured:", OWNER_EMAIL ? "Yes" : "No - Owner emails will fail if missing");
+
+// --- Construct allowedOrigins array ---
+const allowedOrigins = [];
+if (CUSTOMER_FRONTEND_URL) {
+    allowedOrigins.push(CUSTOMER_FRONTEND_URL.trim());
+    console.log(`Added CUSTOMER_FRONTEND_URL to allowedOrigins: ${CUSTOMER_FRONTEND_URL.trim()}`);
+} else {
+    console.warn("CUSTOMER_FRONTEND_URL (env.FRONTEND_URL) is not set.");
+}
+if (ADMIN_FRONTEND_URL) {
+    allowedOrigins.push(ADMIN_FRONTEND_URL.trim());
+    console.log(`Added ADMIN_FRONTEND_URL to allowedOrigins: ${ADMIN_FRONTEND_URL.trim()}`);
+} else {
+    console.warn("ADMIN_FRONTEND_URL is not set.");
+}
+
+console.log("Final allowedOrigins list:", allowedOrigins);
 console.log("--------------------------------------------------");
+
 
 // --- Database Connection ---
 if (!process.env.MONGODB_URI) {
@@ -47,42 +66,31 @@ if (!process.env.MONGODB_URI) {
     });
 }
 
-// --- Configure CORS to allow multiple origins ---
-const allowedOrigins = [];
-if (CUSTOMER_FRONTEND_URL) allowedOrigins.push(CUSTOMER_FRONTEND_URL);
-if (ADMIN_FRONTEND_URL) allowedOrigins.push(ADMIN_FRONTEND_URL);
-// You can also add localhost for development if needed, e.g., 'http://localhost:5500' for live server admin.html
+// --- Configure CORS ---
+const corsOptions = {
+  origin: function (origin, callback) {
+    console.log(`CORS Middleware: Request from origin: ${origin}. Allowed list: [${allowedOrigins.join(', ')}]`);
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.length === 0) { 
+      console.log(`CORS Middleware: Origin ${origin} ALLOWED.`);
+      callback(null, true);
+    } else {
+      console.error(`CORS Middleware: Origin ${origin} DENIED.`);
+      callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'));
+    }
+  },
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", 
+  allowedHeaders: ['Content-Type', 'Authorization'], 
+  credentials: true, 
+  optionsSuccessStatus: 200 
+};
 
-if (allowedOrigins.length === 0) {
-    console.warn("WARNING: No FRONTEND_URL or ADMIN_FRONTEND_URL environment variables set. CORS might be too permissive or fail.");
-    // Fallback to allow all if no specific origins are defined (less secure, for initial debugging only)
-    app.use(cors());
-    app.options('*', cors());
-    console.log("CORS configured to allow ALL origins due to missing frontend URL environment variables.");
-} else {
-    console.log("Allowed CORS origins:", allowedOrigins);
-    const corsOptions = {
-      origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests) OR if origin is in whitelist
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-          callback(null, true);
-        } else {
-          const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`;
-          console.error(msg);
-          callback(new Error(msg));
-        }
-      },
-      optionsSuccessStatus: 200 
-    };
-    app.use(cors(corsOptions));
-    // Explicitly handle preflight requests for all routes using these options
-    app.options('*', cors(corsOptions)); 
-}
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); 
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Nodemailer Transporter (Logic is in emailService.js, this is just a log)
 if (SENDER_EMAIL_USER && SENDER_EMAIL_PASS) {
     console.log("Nodemailer credentials are set for emailService.");
 } else {
@@ -93,6 +101,7 @@ if (SENDER_EMAIL_USER && SENDER_EMAIL_PASS) {
 app.use('/api/orders', orderRoutes);       
 app.use('/api/inquiry', inquiryRoutes);    
 app.use('/api/admin/products', adminProductRoutes); 
+app.use('/api/products', publicProductRoutes); // <-- MOUNTED PUBLIC PRODUCT ROUTES
 
 // Test route
 app.get('/api/test', (req, res) => {
