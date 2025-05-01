@@ -541,14 +541,14 @@
                 populateDimensionDropdownsOnCard(card, product.dimensions, product._id);
 
                 card.querySelector('.add-to-order-btn').addEventListener('click', () => {
-                    console.log('Add to cart clicked for product:', product.name, product._id); // DEBUG
+                    console.log('Add to cart clicked for product:', product.name, product._id); 
 
                     const quantityInput = card.querySelector(`#qty-${product._id}`);
                     const dimensionSelect = card.querySelector(`#dim-${product._id}`);
                     const quantity = parseInt(quantityInput.value);
                     const selectedDimensionName = dimensionSelect.value;
                     
-                    console.log('Selected dimension name:', selectedDimensionName, 'Quantity:', quantity); // DEBUG
+                    console.log('Selected dimension name:', selectedDimensionName, 'Quantity:', quantity); 
 
                     if (!selectedDimensionName) {
                         orderFeedback.textContent = 'Please select a dimension for the product.';
@@ -557,24 +557,34 @@
                         return;
                     }
 
+                    // Find the full product object from allFetchedProducts to get its gstRate
+                    const fullProductData = allFetchedProducts.find(p => p._id === product._id);
+                    if (!fullProductData) {
+                        console.error("Could not find full product data for ID:", product._id);
+                        orderFeedback.textContent = 'Error finding product details. Please refresh.';
+                        orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                        setTimeout(() => orderFeedback.textContent = '', 3000);
+                        return;
+                    }
+
                     const selectedDimensionData = product.dimensions.find(d => d.dimensionName === selectedDimensionName);
-                    console.log('Found dimension data:', selectedDimensionData); // DEBUG
-                    console.log('Product GST rate:', product.gstRate); // DEBUG
+                    console.log('Found dimension data:', selectedDimensionData); 
+                    console.log('Product GST rate from fullProductData:', fullProductData.gstRate); 
 
 
-                    if (quantity > 0 && selectedDimensionData && typeof product.gstRate === 'number') { 
-                        addItemToOrder(product._id, product.name, selectedDimensionName, quantity, selectedDimensionData.basePrice, product.gstRate);
+                    if (quantity > 0 && selectedDimensionData && typeof fullProductData.gstRate === 'number') { 
+                        addItemToOrder(product._id, product.name, selectedDimensionName, quantity, selectedDimensionData.basePrice, fullProductData.gstRate);
                         quantityInput.value = '1'; 
                     } else {
                         let errorMsg = 'Please enter a valid quantity.';
                         if (!selectedDimensionData) {
                             errorMsg = 'Could not find data for the selected dimension.';
-                        } else if (typeof product.gstRate !== 'number') {
+                        } else if (typeof fullProductData.gstRate !== 'number') {
                             errorMsg = 'Product GST rate is missing or invalid.';
                         }
                         orderFeedback.textContent = errorMsg;
                         orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
-                        console.error("Add to cart error:", errorMsg, "Selected Dim Data:", selectedDimensionData, "GST Rate:", product.gstRate);
+                        console.error("Add to cart error:", errorMsg, "Selected Dim Data:", selectedDimensionData, "GST Rate:", fullProductData.gstRate);
                         setTimeout(() => orderFeedback.textContent = '', 3000);
                     }
                 });
@@ -695,10 +705,83 @@
         const customerPincodeInput = document.getElementById('customer-pincode');
         const orderFeedback = document.getElementById('order-feedback');
         
-        function renderOrderSummary() { /* ... (as before, ensure elements exist before accessing properties) ... */ }
+        function renderOrderSummary() {
+            if (!orderItemsContainer || !orderTotalElement || !placeOrderBtn || !clearOrderBtn) {
+                console.error("One or more order summary DOM elements not found!");
+                return;
+            }
+            orderItemsContainer.innerHTML = '';
+            if (currentOrder.length === 0) {
+                orderItemsContainer.innerHTML = '<p class="text-gray-400 text-center">Your order is currently empty.</p>';
+                orderTotalElement.textContent = '0.00 Rs';
+                placeOrderBtn.disabled = true;
+                placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                clearOrderBtn.disabled = true; 
+                clearOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            clearOrderBtn.disabled = false; 
+            clearOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            let grandTotal = 0;
+            const mainUl = document.createElement('ul');
+            mainUl.className = 'space-y-3'; 
+
+            currentOrder.forEach(productGroup => {
+                const productLi = document.createElement('li');
+                productLi.className = 'order-product-group'; 
+
+                const productNameHeader = document.createElement('h4');
+                productNameHeader.className = 'text-lg font-semibold text-gray-100 mb-2';
+                productNameHeader.textContent = productGroup.baseProductName;
+                productLi.appendChild(productNameHeader);
+
+                const variantsUl = document.createElement('ul');
+                variantsUl.className = 'space-y-2 pl-1'; 
+
+                productGroup.variants.forEach(variant => {
+                    const variantLi = document.createElement('li');
+                    variantLi.className = 'order-variant-item flex justify-between items-center text-sm';
+                    
+                    const baseSubtotalForVariant = variant.basePrice * variant.quantity;
+                    const gstForVariantSubtotal = baseSubtotalForVariant * variant.gstRate;
+                    const variantTotalWithGst = variant.priceIncGst * variant.quantity;
+                    grandTotal += variantTotalWithGst;
+
+                    variantLi.innerHTML = `
+                        <div>
+                            <span class="text-gray-300">${variant.dimension}</span>
+                            <span class="text-xs text-gray-500 block">Qty: ${variant.quantity}</span>
+                            <span class="text-xs text-gray-500 block">
+                                Amount: ${baseSubtotalForVariant.toFixed(2)} Rs + GST: ${gstForVariantSubtotal.toFixed(2)} Rs
+                            </span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-gray-200 mr-3">${variantTotalWithGst.toFixed(2)} Rs</span>
+                            <button class="remove-item-btn order-item-action-button" data-variant-id="${variant.variantId}" title="Remove item">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    variantsUl.appendChild(variantLi);
+                });
+                productLi.appendChild(variantsUl);
+                mainUl.appendChild(productLi);
+            });
+
+            orderItemsContainer.appendChild(mainUl);
+            orderTotalElement.textContent = `${grandTotal.toFixed(2)} Rs`;
+        }
+
         function addItemToOrder(baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate) { 
-            console.log('addItemToOrder called with:', {baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate}); // DEBUG
-            const priceIncGst = basePrice * (1 + gstRate);
+            console.log('addItemToOrder called with:', {baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate}); 
+            // Ensure gstRate is a number, fallback to global GST_RATE if undefined or not a number
+            const effectiveGstRate = (typeof gstRate === 'number' && !isNaN(gstRate)) ? gstRate : GST_RATE;
+            console.log('Effective GST Rate used:', effectiveGstRate);
+
+            const priceIncGst = basePrice * (1 + effectiveGstRate);
             const variantId = `${baseProductId}-${selectedDimensionName.replace(/\s+/g, '-')}`;
 
             let productGroup = currentOrder.find(pg => pg.baseProductId === baseProductId);
@@ -712,7 +795,7 @@
                         variantId: variantId,
                         dimension: selectedDimensionName,
                         basePrice: basePrice,
-                        gstRate: gstRate,
+                        gstRate: effectiveGstRate, 
                         priceIncGst: priceIncGst, 
                         quantity: quantity 
                     });
@@ -725,15 +808,18 @@
                         variantId: variantId,
                         dimension: selectedDimensionName,
                         basePrice: basePrice,
-                        gstRate: gstRate,
+                        gstRate: effectiveGstRate, 
                         priceIncGst: priceIncGst, 
                         quantity: quantity 
                     }]
                 });
             }
-            orderFeedback.textContent = `Added ${quantity} x ${baseProductName} (${selectedDimensionName}) to your cart.`;
-            orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
-            setTimeout(() => orderFeedback.textContent = '', 3000);
+            console.log("currentOrder after addItemToOrder:", JSON.parse(JSON.stringify(currentOrder))); 
+            if(orderFeedback) {
+                orderFeedback.textContent = `Added ${quantity} x ${baseProductName} (${selectedDimensionName}) to your cart.`;
+                orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
+                setTimeout(() => orderFeedback.textContent = '', 3000);
+            }
             renderOrderSummary();
         }
         function removeItemFromOrder(variantIdToRemove) { /* ... (as before) ... */ }
