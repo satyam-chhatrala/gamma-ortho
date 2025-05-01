@@ -3,80 +3,50 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const Product = require('../models/Product'); 
-const { bucket } = require('../services/imageUploadService'); // Import GCS bucket
-const { format } = require('util'); // For formatting public URL
+// Import the GCS upload service and initialization status flag
+const { uploadFileToGCS, isGCSInitialized } = require('../services/imageUploadService'); 
 
 // --- Multer Configuration ---
+// Store files in memory as buffers, good for passing to GCS/Cloudinary directly
 const storage = multer.memoryStorage(); 
 const upload = multer({ 
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit per file
     fileFilter: function (req, file, cb) {
+        // Accept images only
         if (!file.mimetype.startsWith('image/')) {
             req.fileValidationError = 'Only image files are allowed!';
-            return cb(null, false); // Pass false instead of new Error for multer to handle gracefully
+            // To reject this file pass `false`, like so:
+            return cb(null, false);
         }
+        // To accept the file pass `true`, like so:
         cb(null, true);
     }
 });
 
-// Helper function to upload a single file buffer to GCS
-const uploadToGCS = (fileBuffer, originalFilename, folderName) => {
-    return new Promise((resolve, reject) => {
-        if (!bucket) {
-            console.error("GCS bucket is not initialized. Cannot upload file.");
-            return reject(new Error("GCS bucket not initialized. Check server configuration and GCS_BUCKET_NAME."));
-        }
-
-        const uniqueFilename = `${folderName}/${Date.now()}-${originalFilename.replace(/\s+/g, '_')}`;
-        const blob = bucket.file(uniqueFilename);
-        const blobStream = blob.createWriteStream({
-            resumable: false,
-            contentType: fileBuffer.mimetype // Pass mimetype for correct GCS object metadata
-        });
-
-        blobStream.on('error', (err) => {
-            console.error("GCS upload stream error:", err);
-            reject(err);
-        });
-
-        blobStream.on('finish', async () => {
-            // Make the file public (if your bucket permissions allow or are set for public reads)
-            // For more secure access, consider using signed URLs.
-            try {
-                await blob.makePublic();
-                const publicUrl = format(`https://storage.googleapis.com/${bucket.name}/${blob.name}`);
-                console.log("GCS Upload successful, public URL:", publicUrl);
-                resolve({ publicUrl: publicUrl, gcsName: blob.name }); // Return GCS name for potential deletion
-            } catch (publicError) {
-                console.error("GCS makePublic error:", publicError);
-                // If makePublic fails, still resolve with a non-public URL or handle as an error
-                // For now, we'll just log and continue, but this needs careful consideration for access control.
-                // The file is uploaded, but might not be publicly accessible.
-                // A common pattern is to use signed URLs for controlled access instead of making files broadly public.
-                resolve({ publicUrl: `gs://${bucket.name}/${blob.name}`, gcsName: blob.name, needsSignedUrl: true });
-            }
-        });
-        blobStream.end(fileBuffer.buffer); // multer memory storage gives us a buffer
-    });
-};
-
-
 // POST /api/admin/products - Create a new product
 router.post('/', upload.fields([
-    { name: 'baseImage', maxCount: 1 },
-    { name: 'additionalImages', maxCount: 5 } 
+    { name: 'baseImage', maxCount: 1 },         // Matches the 'name' attribute in your admin.html form
+    { name: 'additionalImages', maxCount: 5 }  // Matches the 'name' attribute in your admin.html form
 ]), async (req, res) => {
     console.log("Admin Products: Received POST request to create product");
+    // console.log("Admin Products: Request body (text fields):", req.body); // Contains text fields
+    // console.log("Admin Products: Files received by multer:", req.files); // Contains file objects { baseImage: [File], additionalImages: [File, File] }
+
     if (req.fileValidationError) {
+        console.error("Admin Products: File validation error:", req.fileValidationError);
         return res.status(400).json({ message: req.fileValidationError });
     }
-    if (!bucket) {
-         return res.status(503).json({ message: "Image storage service is not available. Please contact support." });
+
+    // Check if GCS is initialized before attempting to process files if any files were sent
+    if ((req.files && (req.files.baseImage || req.files.additionalImages)) && !isGCSInitialized) {
+        console.error("Admin Products: Attempted image upload, but GCS is not initialized.");
+        return res.status(503).json({ message: 'Image Storage Service (GCS) is not properly initialized on the server. Please check backend logs and configuration.' });
     }
 
     try {
-        if (!req.body.name || !req.body.productType || !req.body['dimensions[0][dimensionName]']) { // Check if at least one dimension name is present
+        // Basic validation for required text fields
+        if (!req.body.name || !req.body.productTypeSelect || !req.body['dimensions[0][dimensionName]']) {
             return res.status(400).json({ message: 'Missing required fields: name, productType, and at least one dimension.' });
         }
         
@@ -90,6 +60,7 @@ router.post('/', upload.fields([
                 parsedDimensions.push({
                     dimensionName: req.body[`dimensions[${i}][dimensionName]`],
                     basePrice: parseFloat(req.body[`dimensions[${i}][basePrice]`])
+                    // SKU was removed
                 });
                 i++;
             }
@@ -101,43 +72,53 @@ router.post('/', upload.fields([
             return res.status(400).json({ message: 'Invalid dimensions data format. ' + parseError.message });
         }
 
-        let baseImageURL = null;
+        let baseImageURL = null; // Default to null if no image is uploaded
         let additionalImageURLs = [];
 
-        // Handle Base Image Upload
+        // Handle Base Image Upload to GCS
         if (req.files && req.files.baseImage && req.files.baseImage[0]) {
             console.log("Uploading base image to GCS...");
-            const baseImageResult = await uploadToGCS(req.files.baseImage[0], req.files.baseImage[0].originalname, "gamma_ortho_products/base_images");
-            baseImageURL = baseImageResult.publicUrl;
+            baseImageURL = await uploadFileToGCS(
+                req.files.baseImage[0].buffer, 
+                req.files.baseImage[0].originalname, 
+                "gamma_ortho_products/base_images/" // GCS destination folder path
+            );
             console.log("Base image uploaded to GCS:", baseImageURL);
         }
 
-        // Handle Additional Images Upload
+        // Handle Additional Images Upload to GCS
         if (req.files && req.files.additionalImages && req.files.additionalImages.length > 0) {
             console.log(`Uploading ${req.files.additionalImages.length} additional images to GCS...`);
             const uploadPromises = req.files.additionalImages.map(file => 
-                uploadToGCS(file, file.originalname, "gamma_ortho_products/additional_images")
+                uploadFileToGCS(
+                    file.buffer, 
+                    file.originalname, 
+                    "gamma_ortho_products/additional_images/" // GCS destination folder path
+                )
             );
-            const additionalImageResults = await Promise.all(uploadPromises);
-            additionalImageURLs = additionalImageResults.map(result => result.publicUrl);
+            additionalImageURLs = await Promise.all(uploadPromises);
             console.log("Additional images uploaded to GCS:", additionalImageURLs);
         }
         
+        let finalProductType = req.body.productTypeSelect;
+        if (req.body.productTypeSelect === 'other' && req.body.newProductType) {
+            finalProductType = req.body.newProductType.trim().toLowerCase().replace(/\s+/g, '-');
+            if (!finalProductType) { // Ensure new type is not empty
+                 return res.status(400).json({ message: 'New product type cannot be empty if "Other" is selected.' });
+            }
+        }
+
         const newProductData = {
             name: req.body.name,
             description: req.body.description,
-            productType: req.body.productType,
+            productType: finalProductType,
             baseImageURL: baseImageURL,
             additionalImageURLs: additionalImageURLs,
             dimensions: parsedDimensions,
-            gstRate: parseFloat(req.body.gstRate) || 0.12,
-            isActive: req.body.isActive === 'true' || req.body.isActive === true 
+            gstRate: parseFloat(req.body.gstRate) || 0.12, // Use default if not provided or invalid
+            isActive: req.body.isActive === 'true' || req.body.isActive === true // FormData sends checkbox 'on' or it's undefined
         };
         
-        if (req.body.productTypeSelect === 'other' && req.body.newProductType) {
-            newProductData.productType = req.body.newProductType.toLowerCase().replace(/\s+/g, '-');
-        }
-
         const newProduct = new Product(newProductData);
         const savedProduct = await newProduct.save();
         console.log("Admin Products: Product saved successfully:", savedProduct._id);
@@ -148,7 +129,8 @@ router.post('/', upload.fields([
         if (error.name === 'ValidationError') {
             return res.status(400).json({ message: "Validation Error", errors: error.errors });
         }
-        res.status(500).json({ message: 'Error creating product', error: error.message });
+        // Catch errors from uploadFileToGCS if they occur (e.g., GCS service error)
+        res.status(500).json({ message: error.message || 'Error creating product' });
     }
 });
 
@@ -186,22 +168,23 @@ router.put('/:id', upload.fields([
     { name: 'additionalImages', maxCount: 5 }
 ]), async (req, res) => {
     console.log(`Admin Products: Received PUT request to update product ID: ${req.params.id}`);
+
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
     }
-     if (!bucket) {
-         return res.status(503).json({ message: "Image storage service is not available. Please contact support." });
+
+    if ((req.files && (req.files.baseImage || req.files.additionalImages)) && !isGCSInitialized) {
+        console.error("Admin Products: Attempted image update, but GCS is not initialized.");
+        return res.status(503).json({ message: 'Image Storage Service (GCS) is not properly initialized on the server. Please check backend logs and configuration.' });
     }
 
     try {
         const updateData = { ...req.body }; 
-        delete updateData.dimensions; // Remove raw dimensions string if sent
+        delete updateData.dimensions; // Remove raw dimensions from body if they exist to avoid conflicts
 
-        // Parse dimensions if they are sent in the update
-        let parsedDimensions;
-        if (req.body['dimensions[0][dimensionName]']) { 
-            parsedDimensions = [];
-            let i = 0;
+        let parsedDimensions = [];
+        let i = 0;
+        if (req.body[`dimensions[${i}][dimensionName]`]) { 
             while(req.body[`dimensions[${i}][dimensionName]`]) {
                  if (!req.body[`dimensions[${i}][basePrice]`]) {
                      throw new Error(`Base price missing for dimension index ${i} during update`);
@@ -216,54 +199,62 @@ router.put('/:id', upload.fields([
                 updateData.dimensions = parsedDimensions;
             }
         } else if (req.body.dimensions && Array.isArray(req.body.dimensions)) {
-            // If dimensions are sent as a pre-parsed array (e.g., from JSON, though form usually won't do this for PUT with FormData)
-            updateData.dimensions = req.body.dimensions;
+             updateData.dimensions = req.body.dimensions.map(d => ({
+                dimensionName: d.dimensionName,
+                basePrice: parseFloat(d.basePrice)
+            }));
         }
 
 
         // Handle Base Image Update
         if (req.files && req.files.baseImage && req.files.baseImage[0]) {
             console.log("Updating base image in GCS...");
-            const baseImageResult = await uploadToGCS(req.files.baseImage[0], req.files.baseImage[0].originalname, "gamma_ortho_products/base_images");
-            updateData.baseImageURL = baseImageResult.publicUrl;
-            // TODO: Delete old baseImage from GCS if product.baseImageURL existed and is different.
-            // You'd need to parse the old GCS object name from the URL to delete it.
+            // TODO: Optionally delete old baseImage from GCS before uploading new one
+            const baseImageResultUrl = await uploadFileToGCS(req.files.baseImage[0].buffer, req.files.baseImage[0].originalname, "gamma_ortho_products/base_images/");
+            updateData.baseImageURL = baseImageResultUrl;
             console.log("Base image updated:", updateData.baseImageURL);
         } else if (req.body.baseImageURL === '' || req.body.baseImageURL === 'null') { 
-            // If an empty string or "null" string is sent for baseImageURL, it means remove/clear the existing one
             updateData.baseImageURL = null; 
-            // TODO: Delete old baseImage from GCS here
+            // TODO: Delete old image from GCS if product had one
         }
 
 
         // Handle Additional Images Update
         if (req.files && req.files.additionalImages && req.files.additionalImages.length > 0) {
             console.log(`Uploading ${req.files.additionalImages.length} new additional images to GCS...`);
+            // This will overwrite existing additionalImageURLs if not handled carefully.
+            // For a robust update, you might fetch the product, compare existing URLs,
+            // upload new ones, and construct the final array.
             const uploadPromises = req.files.additionalImages.map(file => 
-                uploadToGCS(file, file.originalname, "gamma_ortho_products/additional_images")
+                uploadFileToGCS(file.buffer, file.originalname, "gamma_ortho_products/additional_images/")
             );
             const additionalImageResults = await Promise.all(uploadPromises);
-            // This replaces existing additional images. For merging or selective deletion, more complex logic is needed.
-            updateData.additionalImageURLs = additionalImageResults.map(result => result.publicUrl); 
+            // If you want to ADD to existing images instead of replacing:
+            // const product = await Product.findById(req.params.id);
+            // updateData.additionalImageURLs = (product.additionalImageURLs || []).concat(additionalImageResults);
+            updateData.additionalImageURLs = additionalImageResults; // This replaces existing
             console.log("Additional images updated/added:", updateData.additionalImageURLs);
-        } else if (req.body.removeAdditionalImages === 'true') { // Add a way to signal removal of all additional images
+        } else if (req.body.additionalImageURLs && Array.isArray(req.body.additionalImageURLs)) {
+            // If frontend sends an array of URLs (e.g., to allow removing some by not sending them)
+            updateData.additionalImageURLs = req.body.additionalImageURLs.map(url => String(url).trim()).filter(url => url && url !== 'null');
+        } else if (req.body.hasOwnProperty('additionalImageURLs') && (req.body.additionalImageURLs === '' || req.body.additionalImageURLs === null)) {
             updateData.additionalImageURLs = [];
             // TODO: Delete all existing additional images from GCS
         }
-        // Note: Handling specific deletions from additionalImageURLs array is more complex with FormData
-        // and typically requires sending a list of URLs to keep or IDs of images to delete.
-
         
         if (req.body.productTypeSelect === 'other' && req.body.newProductType) {
-            updateData.productType = req.body.newProductType.toLowerCase().replace(/\s+/g, '-');
+            updateData.productType = req.body.newProductType.trim().toLowerCase().replace(/\s+/g, '-');
+             if (!updateData.productType) {
+                 return res.status(400).json({ message: 'New product type cannot be empty if "Other" is selected for update.' });
+            }
         } else if (req.body.productTypeSelect && req.body.productTypeSelect !== 'other') {
             updateData.productType = req.body.productTypeSelect;
         }
-
+        
         if (updateData.hasOwnProperty('isActive')) {
-            updateData.isActive = String(updateData.isActive).toLowerCase() === 'true';
+            updateData.isActive = String(updateData.isActive).toLowerCase() === 'true' || updateData.isActive === true;
         }
-        if (updateData.gstRate) {
+        if (updateData.hasOwnProperty('gstRate')) {
             updateData.gstRate = parseFloat(updateData.gstRate);
         }
 
@@ -285,16 +276,13 @@ router.put('/:id', upload.fields([
         if (error.name === 'ValidationError') {
             return res.status(400).json({ message: "Validation Error", errors: error.errors });
         }
-        res.status(500).json({ message: 'Error updating product', error: error.message });
+        res.status(500).json({ message: error.message || 'Error updating product' });
     }
 });
 
 // DELETE /api/admin/products/:id - Delete a product
 router.delete('/:id', async (req, res) => {
     console.log(`Admin Products: Received DELETE request for product ID: ${req.params.id}`);
-    if (!bucket) {
-         return res.status(503).json({ message: "Image storage service is not available for deleting images. Please contact support." });
-    }
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
         if (!product) {
@@ -302,28 +290,13 @@ router.delete('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Product not found' });
         }
         
-        // Attempt to delete images from GCS
-        const GCS_BASE_URL = `https://storage.googleapis.com/${bucket.name}/`;
-        const deletePromises = [];
+        // TODO: Delete associated images from GCS
+        // This would involve:
+        // 1. Extracting the filename/object name from product.baseImageURL and each URL in product.additionalImageURLs.
+        // 2. Calling storage.bucket(GCS_BUCKET_NAME).file(gcsFilename).delete() for each.
+        //    (Requires `storage` and `GCS_BUCKET_NAME` to be accessible here, or call a service function)
 
-        if (product.baseImageURL && product.baseImageURL.startsWith(GCS_BASE_URL)) {
-            const gcsFileName = product.baseImageURL.substring(GCS_BASE_URL.length);
-            console.log(`Attempting to delete base image from GCS: ${gcsFileName}`);
-            deletePromises.push(bucket.file(gcsFileName).delete().catch(err => console.error(`Failed to delete base image ${gcsFileName} from GCS:`, err)));
-        }
-        if (product.additionalImageURLs && product.additionalImageURLs.length > 0) {
-            product.additionalImageURLs.forEach(url => {
-                if (url && url.startsWith(GCS_BASE_URL)) {
-                    const gcsFileName = url.substring(GCS_BASE_URL.length);
-                    console.log(`Attempting to delete additional image from GCS: ${gcsFileName}`);
-                    deletePromises.push(bucket.file(gcsFileName).delete().catch(err => console.error(`Failed to delete additional image ${gcsFileName} from GCS:`, err)));
-                }
-            });
-        }
-        await Promise.all(deletePromises);
-        console.log("Associated GCS images (if any) deletion process initiated.");
-
-        console.log("Admin Products: Product deleted successfully from DB:", product._id);
+        console.log("Admin Products: Product deleted successfully:", product._id);
         res.status(200).json({ message: 'Product deleted successfully' });
     } catch (error) {
         console.error(`Admin Products: Error deleting product ID ${req.params.id}:`, error);
