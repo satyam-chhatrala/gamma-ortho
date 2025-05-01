@@ -62,22 +62,51 @@ router.post('/', upload.fields([
         }
         
         let parsedDimensions = [];
+        console.log("Admin Products: Starting dimension parsing loop...");
         try {
             let i = 0;
-            while(req.body[`dimensions[${i}][dimensionName]`] !== undefined) { 
+            // Loop as long as a dimensionName for the current index exists or a reasonable limit
+            // FormData might send empty strings for fields that were present but cleared,
+            // so checking for !== undefined is important.
+            while(req.body[`dimensions[${i}][dimensionName]`] !== undefined || req.body[`dimensions[${i}][basePrice]`] !== undefined) { 
                 const dimName = req.body[`dimensions[${i}][dimensionName]`];
                 const dimPrice = req.body[`dimensions[${i}][basePrice]`];
 
-                if (dimName && dimName.trim() !== "" && dimPrice && !isNaN(parseFloat(dimPrice))) {
+                console.log(`Admin Products: Parsing dimension index ${i}:`);
+                console.log(`  dimName raw: '${dimName}' (type: ${typeof dimName})`);
+                console.log(`  dimPrice raw: '${dimPrice}' (type: ${typeof dimPrice})`);
+
+                const isDimNameValid = dimName && dimName.trim() !== "";
+                const isDimPriceValid = dimPrice && String(dimPrice).trim() !== "" && !isNaN(parseFloat(dimPrice));
+                
+                console.log(`  isDimNameValid: ${isDimNameValid}`);
+                console.log(`  isDimPriceValid: ${isDimPriceValid}`);
+
+
+                if (isDimNameValid && isDimPriceValid) {
                     parsedDimensions.push({
                         dimensionName: dimName.trim(),
                         basePrice: parseFloat(dimPrice)
                     });
+                    console.log(`  Dimension index ${i} ADDED.`);
                 } else if (dimName || dimPrice) { 
-                    throw new Error(`Incomplete or invalid data for dimension at index ${i}. Both name and a valid price are required.`);
+                    // Only throw error if there's partial data for an entry that seems intended
+                    console.warn(`  Dimension index ${i} SKIPPED due to incomplete/invalid data.`);
+                    // If you want to be stricter and fail if any dimension entry is partial:
+                    // throw new Error(`Incomplete or invalid data for dimension at index ${i}. Both name and a valid price are required.`);
+                } else {
+                    // Both are undefined/empty, likely end of submitted dimension fields
+                    console.log(`  Dimension index ${i} has no name or price, stopping parse for this index.`);
+                    break; 
                 }
                 i++;
+                if (i > 20) { // Safety break for the loop, adjust if you expect more dimensions
+                    console.warn("Admin Products: Exceeded maximum dimension parsing attempts (20).");
+                    break;
+                }
             }
+            console.log("Admin Products: Dimension parsing loop finished. Parsed dimensions:", parsedDimensions);
+
 
             if (parsedDimensions.length === 0) {
                 return res.status(400).json({ message: 'At least one complete and valid dimension (name and price) is required.' });
@@ -86,7 +115,6 @@ router.post('/', upload.fields([
             console.error("Error parsing dimensions:", parseError);
             return res.status(400).json({ message: 'Invalid dimensions data format. ' + parseError.message });
         }
-
         let baseImageURL = null; 
         let additionalImageURLs = [];
 
