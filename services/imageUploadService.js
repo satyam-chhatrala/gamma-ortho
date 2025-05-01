@@ -10,7 +10,6 @@ console.log("Raw GCS_BUCKET_NAME from env:", process.env.GCS_BUCKET_NAME);
 const rawGcsCredentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
 if (rawGcsCredentialsJson) {
     console.log("Raw GOOGLE_APPLICATION_CREDENTIALS_JSON from env is SET (length):", rawGcsCredentialsJson.length);
-    // Avoid logging the full key, but check if it seems plausible (e.g., starts with '{' and ends with '}')
     if (rawGcsCredentialsJson.trim().startsWith("{") && rawGcsCredentialsJson.trim().endsWith("}")) {
         console.log("GOOGLE_APPLICATION_CREDENTIALS_JSON appears to be in JSON format.");
     } else {
@@ -26,6 +25,7 @@ console.log("Raw GOOGLE_APPLICATION_CREDENTIALS file path from env:", process.en
 let storage;
 let bucket;
 const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME;
+let isGCSInitialized = false; // Flag to track successful initialization
 
 try {
     if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
@@ -50,12 +50,17 @@ try {
     if (!GCS_BUCKET_NAME) {
         throw new Error("GCS_BUCKET_NAME environment variable is not set. Cannot initialize GCS bucket.");
     }
+    if (!storage) { // Should be caught by earlier errors, but good to double check
+        throw new Error("Storage client failed to initialize before bucket access.");
+    }
     bucket = storage.bucket(GCS_BUCKET_NAME);
     console.log(`GCS Service: Successfully initialized and connected to GCS bucket: ${GCS_BUCKET_NAME}`);
+    isGCSInitialized = true; // Set flag to true on successful initialization
 
 } catch (error) {
     console.error("FATAL ERROR during GCS Initialization in imageUploadService.js:", error.message);
     console.error("Full GCS Initialization Error:", error);
+    // The dummy bucket setup is for allowing the app to start, but isGCSInitialized will remain false.
     bucket = { 
         file: (filename) => ({
             createWriteStream: (options) => {
@@ -81,9 +86,9 @@ try {
  */
 const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
     return new Promise((resolve, reject) => {
-        if (!bucket || !GCS_BUCKET_NAME || !storage || typeof bucket.file !== 'function') { // More robust check
-            console.error("GCS bucket or storage client not available for upload in uploadFileToGCS. Bucket initialized status:", bucket ? "Exists" : "Does not exist");
-            return reject(new Error("Image storage service not properly initialized. Please contact support."));
+        if (!isGCSInitialized || !bucket || typeof bucket.file !== 'function') { 
+            console.error("GCS service not properly initialized. Cannot upload file.");
+            return reject(new Error("Image Storage Service (GCS) is not properly initialized on the server. Please check backend logs and configuration."));
         }
 
         const ext = path.extname(originalFilename);
@@ -116,5 +121,6 @@ const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
 };
 
 module.exports = {
-    uploadFileToGCS
+    uploadFileToGCS,
+    isGCSInitialized // Export the flag
 };
