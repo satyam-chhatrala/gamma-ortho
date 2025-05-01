@@ -48,12 +48,12 @@ router.post('/', upload.fields([
         if (!req.body.name || req.body.name.trim() === "") {
             return res.status(400).json({ message: 'Product name is required.' });
         }
-        if (!req.body.productTypeSelect || req.body.productTypeSelect.trim() === "") {
+        if (!req.body.productType || req.body.productType.trim() === "") {
             // This means the default "-- Select Type --" (with value="") was likely submitted
             return res.status(400).json({ message: 'Product type selection is required.' });
         }
         
-        let finalProductType = req.body.productTypeSelect.trim().toLowerCase();
+        let finalProductType = req.body.productType.trim().toLowerCase();
         if (finalProductType === 'other') {
             if (!req.body.newProductType || req.body.newProductType.trim() === '') {
                 return res.status(400).json({ message: 'Please specify the new product type when "Other" is selected.' });
