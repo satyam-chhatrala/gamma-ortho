@@ -50,17 +50,16 @@ try {
     if (!GCS_BUCKET_NAME) {
         throw new Error("GCS_BUCKET_NAME environment variable is not set. Cannot initialize GCS bucket.");
     }
-    if (!storage) { // Should be caught by earlier errors, but good to double check
+    if (!storage) { 
         throw new Error("Storage client failed to initialize before bucket access.");
     }
     bucket = storage.bucket(GCS_BUCKET_NAME);
     console.log(`GCS Service: Successfully initialized and connected to GCS bucket: ${GCS_BUCKET_NAME}`);
-    isGCSInitialized = true; // Set flag to true on successful initialization
+    isGCSInitialized = true; 
 
 } catch (error) {
     console.error("FATAL ERROR during GCS Initialization in imageUploadService.js:", error.message);
     console.error("Full GCS Initialization Error:", error);
-    // The dummy bucket setup is for allowing the app to start, but isGCSInitialized will remain false.
     bucket = { 
         file: (filename) => ({
             createWriteStream: (options) => {
@@ -101,8 +100,10 @@ const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
             metadata: {
                 contentType: 'auto', 
             },
-            resumable: false, 
-            public: true    
+            resumable: false
+            // REMOVED: public: true 
+            // Public access is now controlled at the bucket level (IAM permissions)
+            // when using Uniform Bucket-Level Access.
         });
 
         stream.on('error', (err) => {
@@ -111,6 +112,7 @@ const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
         });
 
         stream.on('finish', () => {
+            // The file is uploaded. Its public accessibility depends on bucket IAM settings.
             const publicUrl = `https://storage.googleapis.com/${GCS_BUCKET_NAME}/${uniqueFilename}`;
             console.log(`${originalFilename} uploaded to GCS. Public URL: ${publicUrl}`);
             resolve(publicUrl);
@@ -122,5 +124,5 @@ const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
 
 module.exports = {
     uploadFileToGCS,
-    isGCSInitialized // Export the flag
+    isGCSInitialized 
 };
