@@ -178,7 +178,7 @@ router.put('/:id', upload.fields([
     { name: 'additionalImages', maxCount: 5 }
 ]), async (req, res) => {
     console.log(`Admin Products: Received PUT request to update product ID: ${req.params.id}`);
-    console.log("Admin Products: Update req.body:", JSON.stringify(req.body, null, 2)); // Log the received body
+    console.log("Admin Products: Update req.body:", JSON.stringify(req.body, null, 2));
 
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
@@ -192,7 +192,7 @@ router.put('/:id', upload.fields([
     try {
         const updateData = {}; // Initialize an empty object for updates
 
-        // Populate updateData with fields from req.body if they exist
+        // Populate updateData with fields from req.body if they exist and are meant to be updated
         if (req.body.name !== undefined) updateData.name = req.body.name;
         if (req.body.description !== undefined) updateData.description = req.body.description;
         
@@ -200,7 +200,7 @@ router.put('/:id', upload.fields([
         if (req.body.productTypeSelect) { 
             if (req.body.productTypeSelect.trim().toLowerCase() === 'other') {
                 updateData.productType = req.body.newProductType ? req.body.newProductType.trim().toLowerCase().replace(/\s+/g, '-') : '';
-                if (!updateData.productType) { // If newProductType is also empty
+                if (!updateData.productType) {
                     return res.status(400).json({ message: 'New product type cannot be empty if "Other" is selected for update.' });
                 }
             } else {
@@ -209,8 +209,25 @@ router.put('/:id', upload.fields([
         }
         
         if (req.body.gstRate !== undefined) updateData.gstRate = parseFloat(req.body.gstRate);
-        if (req.body.isActive !== undefined) {
-            updateData.isActive = String(req.body.isActive).toLowerCase() === 'true' || req.body.isActive === true;
+        // FormData sends checkbox values as 'on' or 'true' (if value attribute is set) or not at all if unchecked.
+        // If it's not in req.body, it means it was unchecked (or not sent).
+        // If it is in req.body, it means it was checked.
+        if (req.body.hasOwnProperty('isActive')) { // Check if the field was sent
+             updateData.isActive = String(req.body.isActive).toLowerCase() === 'true';
+        } else {
+            // If isActive is not sent at all by the form (e.g. checkbox was part of form but unchecked and not sent)
+            // you might want to explicitly set it to false for updates, or leave it to not update.
+            // For now, if it's not sent, we don't update it. If you want unchecking to mean false,
+            // your frontend should send 'false' or you handle it here.
+            // A common way is: updateData.isActive = !!req.body.isActive; (converts 'on' to true, undefined to false)
+            // But since your frontend sends 'true'/'false' string:
+            if (req.body.isActive === undefined && Object.keys(req.body).includes('isActive')) { 
+                // This case is tricky with FormData if unchecked boxes are not sent.
+                // Assuming if 'isActive' is not in req.body for an update, we don't change it.
+                // If you want an unchecked box to explicitly set to false, the frontend should send 'false'.
+            } else if (req.body.isActive !== undefined) {
+                 updateData.isActive = String(req.body.isActive).toLowerCase() === 'true';
+            }
         }
 
 
@@ -232,7 +249,11 @@ router.put('/:id', upload.fields([
             if (req.body.dimensions.length > 0 && tempParsedDimensions.length === 0) {
                 return res.status(400).json({ message: 'Provided dimensions array was empty or contained only invalid data.' });
             }
-            if (tempParsedDimensions.length > 0) {
+            // Only assign to updateData if there are valid dimensions to update.
+            // If tempParsedDimensions is empty but req.body.dimensions was not, it means all were invalid.
+            // If req.body.dimensions was empty, this ensures we don't accidentally set dimensions to [].
+            // To explicitly clear dimensions, frontend should send dimensions: []
+            if (tempParsedDimensions.length > 0 || (req.body.dimensions && req.body.dimensions.length === 0) ) {
                  updateData.dimensions = tempParsedDimensions; 
             }
             console.log("Admin Products: Parsed dimensions for update:", updateData.dimensions);
@@ -245,10 +266,10 @@ router.put('/:id', upload.fields([
             const baseImageResultUrl = await uploadFileToGCS(req.files.baseImage[0].buffer, req.files.baseImage[0].originalname, "gamma_ortho_products/base_images/");
             updateData.baseImageURL = baseImageResultUrl;
             console.log("Base image updated:", updateData.baseImageURL);
-        } else if (req.body.baseImageURL !== undefined && (req.body.baseImageURL === '' || req.body.baseImageURL === null || req.body.baseImageURL === "null")) { 
+        } else if (Object.prototype.hasOwnProperty.call(req.body, 'baseImageURL') && (req.body.baseImageURL === '' || req.body.baseImageURL === null || req.body.baseImageURL === "null")) { 
             // Check if frontend explicitly wants to remove the image
             updateData.baseImageURL = null; 
-            // TODO: Add logic here to delete the old image from GCS if product.baseImageURL existed
+            // TODO: Delete old image from GCS if product had one
         }
 
 
@@ -261,14 +282,13 @@ router.put('/:id', upload.fields([
             const additionalImageResults = await Promise.all(uploadPromises);
             updateData.additionalImageURLs = additionalImageResults; 
             console.log("Additional images updated/added:", updateData.additionalImageURLs);
-        } else if (req.body.additionalImageURLs !== undefined && Array.isArray(req.body.additionalImageURLs)) {
-            // If frontend sends an array of URLs (e.g., to allow removing some by not sending them, or to keep existing ones)
-            // This logic assumes the frontend sends the complete list of URLs to keep.
-            updateData.additionalImageURLs = req.body.additionalImageURLs.map(url => String(url).trim()).filter(url => url && url !== 'null');
-        } else if (req.body.hasOwnProperty('additionalImageURLs') && (req.body.additionalImageURLs === '' || req.body.additionalImageURLs === null)) {
-            // If frontend explicitly sends empty to clear all additional images
-            updateData.additionalImageURLs = [];
-            // TODO: Delete all existing additional images from GCS
+        } else if (Object.prototype.hasOwnProperty.call(req.body, 'additionalImageURLs')) {
+            if (Array.isArray(req.body.additionalImageURLs)) {
+                 updateData.additionalImageURLs = req.body.additionalImageURLs.map(url => String(url).trim()).filter(url => url && url !== 'null');
+            } else if (req.body.additionalImageURLs === '' || req.body.additionalImageURLs === null) {
+                updateData.additionalImageURLs = [];
+            }
+            // TODO: Delete all existing additional images from GCS if additionalImageURLs is set to []
         }
         
         if (Object.keys(updateData).length === 0 && (!req.files || (!req.files.baseImage && !req.files.additionalImages))) {
