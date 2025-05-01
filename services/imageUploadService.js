@@ -69,10 +69,14 @@ try {
                 });
                 stream.end = (buffer) => { stream.emit('finish'); }; 
                 return stream;
+            },
+            delete: () => { // Add a dummy delete method to the fallback
+                console.error("Dummy GCS bucket: delete called, but GCS is not initialized.");
+                return Promise.reject(new Error("GCS Not Initialized. Cannot delete file."));
             }
         })
     };
-    console.error("Image uploads will fail due to GCS initialization error.");
+    console.error("Image uploads and deletions will fail due to GCS initialization error.");
 }
 
 
@@ -100,10 +104,8 @@ const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
             metadata: {
                 contentType: 'auto', 
             },
-            resumable: false
-            // REMOVED: public: true 
-            // Public access is now controlled at the bucket level (IAM permissions)
-            // when using Uniform Bucket-Level Access.
+            resumable: false, 
+            public: true    
         });
 
         stream.on('error', (err) => {
@@ -112,7 +114,6 @@ const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
         });
 
         stream.on('finish', () => {
-            // The file is uploaded. Its public accessibility depends on bucket IAM settings.
             const publicUrl = `https://storage.googleapis.com/${GCS_BUCKET_NAME}/${uniqueFilename}`;
             console.log(`${originalFilename} uploaded to GCS. Public URL: ${publicUrl}`);
             resolve(publicUrl);
@@ -122,7 +123,57 @@ const uploadFileToGCS = (buffer, originalFilename, destinationFolderPath) => {
     });
 };
 
+/**
+ * Deletes a file from Google Cloud Storage based on its public URL.
+ * @param {string} fileUrl - The public URL of the file to delete (e.g., https://storage.googleapis.com/your-bucket/path/to/file.jpg).
+ * @returns {Promise<void>} A promise that resolves when deletion is attempted.
+ */
+const deleteFileFromGCS = async (fileUrl) => {
+    if (!isGCSInitialized || !bucket || typeof bucket.file !== 'function') {
+        console.error("GCS service not properly initialized. Cannot delete file.");
+        // Optionally throw an error or just log and return
+        return Promise.reject(new Error("Image Storage Service (GCS) is not properly initialized."));
+    }
+    if (!fileUrl || typeof fileUrl !== 'string') {
+        console.warn("deleteFileFromGCS: Invalid or empty fileUrl provided.");
+        return Promise.resolve(); // Nothing to delete
+    }
+
+    try {
+        // Extract the object name from the URL.
+        // Example URL: https://storage.googleapis.com/BUCKET_NAME/OBJECT_NAME
+        const prefix = `https://storage.googleapis.com/${GCS_BUCKET_NAME}/`;
+        if (!fileUrl.startsWith(prefix)) {
+            console.warn(`deleteFileFromGCS: URL "${fileUrl}" does not match expected GCS public URL prefix.`);
+            return Promise.resolve(); // Not a GCS URL from our bucket
+        }
+        const objectName = fileUrl.substring(prefix.length);
+
+        if (!objectName) {
+            console.warn(`deleteFileFromGCS: Could not extract object name from URL "${fileUrl}".`);
+            return Promise.resolve();
+        }
+
+        console.log(`Attempting to delete GCS object: ${objectName}`);
+        await bucket.file(objectName).delete();
+        console.log(`Successfully deleted GCS object: ${objectName}`);
+        return Promise.resolve();
+    } catch (error) {
+        // GCS delete() throws an error if the file doesn't exist, which is often acceptable.
+        if (error.code === 404) { // Not Found
+            console.warn(`deleteFileFromGCS: File not found in GCS (or already deleted): ${fileUrl}. Error code: ${error.code}`);
+            return Promise.resolve(); // Consider this a success in terms of cleanup
+        }
+        console.error(`Error deleting file from GCS (${fileUrl}):`, error);
+        // We might not want to reject the promise here to allow other operations to continue,
+        // but log the error. Depending on requirements, you might re-throw.
+        return Promise.reject(error); 
+    }
+};
+
+
 module.exports = {
     uploadFileToGCS,
+    deleteFileFromGCS, // Export the new function
     isGCSInitialized 
 };
