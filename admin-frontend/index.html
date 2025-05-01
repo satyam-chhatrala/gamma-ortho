@@ -51,14 +51,19 @@
         .btn-primary:hover { background-color: #0284c7; /* sky-600 */ }
         .btn-secondary { background-color: #4b5563; /* gray-600 */ color: white; }
         .btn-secondary:hover { background-color: #6b7280; /* gray-500 */ }
+        .btn-warning { background-color: #f59e0b; color: #1f2937; } /* amber-500 */
+        .btn-warning:hover { background-color: #d97706; } /* amber-600 */
         .btn-danger { background-color: #dc2626; /* red-600 */ color: white; }
         .btn-danger:hover { background-color: #b91c1c; /* red-700 */ }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
         .dimension-entry { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
         .dimension-entry input { margin-bottom: 0; }
         #admin-feedback { margin-top: 1rem; padding: 0.75rem; border-radius: 0.375rem; text-align: center; }
         .feedback-success { background-color: #10b981; color: white; } /* green-500 */
         .feedback-error { background-color: #ef4444; color: white; } /* red-500 */
         .hidden-field { display: none; }
+        .image-preview-container { margin-top: 0.5rem; }
+        .image-preview { max-width: 100px; max-height: 100px; margin-right: 0.5rem; border-radius: 0.25rem; border: 1px solid #4b5563;}
     </style>
 </head>
 <body>
@@ -67,9 +72,10 @@
             <h1 class="text-3xl font-bold text-sky-400">Gamma Ortho Instruments - Admin Panel</h1>
         </header>
 
-        <section class="form-section" id="add-product-section">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-100">Add New Product</h2>
-            <form id="add-product-form" enctype="multipart/form-data">
+        <section class="form-section" id="product-form-section">
+            <h2 id="form-title" class="text-2xl font-semibold mb-6 text-gray-100">Add New Product</h2>
+            <form id="product-form" enctype="multipart/form-data">
+                <input type="hidden" id="product-id" name="productId"> 
                 <div>
                     <label for="product-name">Product Name</label>
                     <input type="text" id="product-name" name="name" class="input-field" required>
@@ -98,7 +104,8 @@
                 <div class="mt-4">
                     <label>Dimensions & Pricing (Base Price before GST)</label>
                     <div id="dimensions-container">
-                        </div>
+                        {/* Dimension entries will be added here by JavaScript */}
+                    </div>
                     <button type="button" id="add-dimension-btn" class="btn btn-secondary text-sm mt-2">
                         <i class="fas fa-plus mr-1"></i> Add Dimension
                     </button>
@@ -112,12 +119,14 @@
                 <div class="mt-4">
                     <label for="product-base-image">Base Image</label>
                     <input type="file" id="product-base-image" name="baseImage" class="file-input-styled">
-                    <p class="text-xs text-gray-400 mt-1">Backend needs update to handle file uploads.</p>
+                    <div id="base-image-preview-container" class="image-preview-container"></div>
+                    <input type="hidden" id="existing-base-image-url" name="baseImageURL">
                 </div>
                 <div class="mt-4">
-                    <label for="product-additional-images">Additional Images</label>
+                    <label for="product-additional-images">Additional Images (Select new to replace all)</label>
                     <input type="file" id="product-additional-images" name="additionalImages" class="file-input-styled" multiple>
-                     <p class="text-xs text-gray-400 mt-1">Backend needs update to handle file uploads.</p>
+                    <div id="additional-images-preview-container" class="image-preview-container flex flex-wrap gap-2"></div>
+                    {/* For more granular control of existing additional images, a more complex UI would be needed */}
                 </div>
 
                 <div class="mt-4 flex items-center">
@@ -125,8 +134,9 @@
                     <label for="product-is-active" class="mb-0">Product is Active (Visible on customer site)</label>
                 </div>
 
-                <div class="mt-6">
-                    <button type="submit" class="btn btn-primary w-full">Add Product</button>
+                <div class="mt-6 flex space-x-4">
+                    <button type="submit" id="submit-product-btn" class="btn btn-primary w-full">Add Product</button>
+                    <button type="button" id="cancel-edit-btn" class="btn btn-secondary w-full hidden-field">Cancel Edit</button>
                 </div>
             </form>
             <div id="admin-feedback"></div>
@@ -135,51 +145,89 @@
         <section class="mt-12">
             <h2 class="text-2xl font-semibold mb-6 text-gray-100">Existing Products</h2>
             <div id="existing-products-list" class="bg-gray-800 p-4 rounded-md">
-                <p class="text-center text-gray-400">Product listing will appear here...</p>
-                </div>
+                <p class="text-center text-gray-400">Loading products...</p>
+            </div>
         </section>
     </div>
 
     <script>
-        const BACKEND_URL = 'https://gamma-ortho.onrender.com'; // Ensure this is your deployed backend URL
+        const BACKEND_URL = 'https://gamma-ortho-api.onrender.com'; 
         const GST_RATE_DEFAULT = 0.12; 
 
-        const addProductForm = document.getElementById('add-product-form');
-        const dimensionsContainer = document.getElementById('dimensions-container');
-        const addDimensionBtn = document.getElementById('add-dimension-btn');
-        const adminFeedback = document.getElementById('admin-feedback');
+        const productForm = document.getElementById('product-form');
+        const formTitle = document.getElementById('form-title');
+        const productIdInput = document.getElementById('product-id');
+        const productNameInput = document.getElementById('product-name');
+        const productDescriptionInput = document.getElementById('product-description');
         const productTypeSelect = document.getElementById('product-type-select');
         const newProductTypeContainer = document.getElementById('new-product-type-container');
         const newProductTypeInput = document.getElementById('new-product-type-input');
+        const dimensionsContainer = document.getElementById('dimensions-container');
+        const addDimensionBtn = document.getElementById('add-dimension-btn');
+        const productGstRateInput = document.getElementById('product-gst-rate');
+        const productBaseImageInput = document.getElementById('product-base-image');
+        const baseImagePreviewContainer = document.getElementById('base-image-preview-container');
+        const existingBaseImageUrlInput = document.getElementById('existing-base-image-url');
+        const productAdditionalImagesInput = document.getElementById('product-additional-images');
+        const additionalImagesPreviewContainer = document.getElementById('additional-images-preview-container');
+        const productIsActiveCheckbox = document.getElementById('product-is-active');
+        const submitProductBtn = document.getElementById('submit-product-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const adminFeedback = document.getElementById('admin-feedback');
+        const existingProductsList = document.getElementById('existing-products-list');
 
-        // Function to add a new dimension input group
-        function addDimensionEntry() {
+        let editMode = false;
+
+        function displayFeedback(message, type) {
+            adminFeedback.textContent = message;
+            adminFeedback.className = type === 'success' ? 'feedback-success' : 'feedback-error';
+            setTimeout(() => {
+                adminFeedback.textContent = '';
+                adminFeedback.className = '';
+            }, 5000);
+        }
+
+        function addDimensionEntry(dimension = { dimensionName: '', basePrice: '' }) {
             const entryCount = dimensionsContainer.children.length;
             const dimensionEntry = document.createElement('div');
             dimensionEntry.className = 'dimension-entry';
             dimensionEntry.innerHTML = `
-                <input type="text" name="dimensionName-${entryCount}" placeholder="Dimension Name (e.g., Small, 2.5mm)" class="input-field flex-grow" required>
-                <input type="number" name="basePrice-${entryCount}" placeholder="Base Price" class="input-field w-1/3" step="0.01" min="0" required>
+                <input type="text" name="dimensionName-${entryCount}" placeholder="Dimension Name" class="input-field flex-grow" value="${dimension.dimensionName}" required>
+                <input type="number" name="basePrice-${entryCount}" placeholder="Base Price" class="input-field w-1/3" step="0.01" min="0" value="${dimension.basePrice}" required>
                 <button type="button" class="btn-danger p-2 rounded remove-dimension-btn" title="Remove Dimension">
                     <i class="fas fa-times"></i>
                 </button>
             `;
             dimensionsContainer.appendChild(dimensionEntry);
-
             dimensionEntry.querySelector('.remove-dimension-btn').addEventListener('click', function() {
                 this.parentElement.remove();
             });
         }
-
-        // Add one dimension entry initially
-        addDimensionEntry(); 
-        if(document.getElementById('product-gst-rate')) {
-            document.getElementById('product-gst-rate').value = GST_RATE_DEFAULT;
+        
+        function resetFormToCreateMode() {
+            formTitle.textContent = 'Add New Product';
+            productForm.reset();
+            productIdInput.value = ''; // Clear product ID
+            dimensionsContainer.innerHTML = '';
+            addDimensionEntry(); // Add one empty dimension entry
+            productGstRateInput.value = GST_RATE_DEFAULT;
+            productIsActiveCheckbox.checked = true;
+            submitProductBtn.textContent = 'Add Product';
+            submitProductBtn.classList.remove('btn-warning');
+            submitProductBtn.classList.add('btn-primary');
+            cancelEditBtn.classList.add('hidden-field');
+            baseImagePreviewContainer.innerHTML = '';
+            additionalImagesPreviewContainer.innerHTML = '';
+            existingBaseImageUrlInput.value = '';
+            productTypeSelect.value = '';
+            newProductTypeContainer.style.display = 'none';
+            newProductTypeInput.required = false;
+            editMode = false;
         }
 
-        addDimensionBtn.addEventListener('click', addDimensionEntry);
+        addDimensionBtn.addEventListener('click', () => addDimensionEntry());
+        cancelEditBtn.addEventListener('click', resetFormToCreateMode);
 
-        // Show/hide new product type input based on selection
         productTypeSelect.addEventListener('change', function() {
             if (this.value === 'other') {
                 newProductTypeContainer.style.display = 'block';
@@ -187,41 +235,40 @@
             } else {
                 newProductTypeContainer.style.display = 'none';
                 newProductTypeInput.required = false;
-                newProductTypeInput.value = ''; // Clear if hidden
+                newProductTypeInput.value = '';
             }
         });
 
-        addProductForm.addEventListener('submit', async function(event) {
+        productForm.addEventListener('submit', async function(event) {
             event.preventDefault();
-            adminFeedback.textContent = '';
-            adminFeedback.className = ''; 
+            adminFeedback.textContent = 'Processing...';
+            adminFeedback.className = 'text-sky-400';
 
-            const formData = new FormData(); // Use FormData for file uploads
-
-            // Append text fields
-            formData.append('name', document.getElementById('product-name').value);
-            formData.append('description', document.getElementById('product-description').value);
+            const formData = new FormData();
+            formData.append('name', productNameInput.value);
+            formData.append('description', productDescriptionInput.value);
             
             let productType = productTypeSelect.value;
             if (productType === 'other') {
                 const newType = newProductTypeInput.value.trim();
                 if (!newType) {
-                    adminFeedback.textContent = 'Please specify the new product type.';
-                    adminFeedback.className = 'feedback-error';
+                    displayFeedback('Please specify the new product type.', 'error');
                     return;
                 }
-                productType = newType.toLowerCase().replace(/\s+/g, '-'); // Sanitize
+                productType = newType.toLowerCase().replace(/\s+/g, '-');
             }
-            formData.append('productType', productType);
+            formData.append('productTypeSelect', productTypeSelect.value); // Send the select value
+            if (productTypeSelect.value === 'other') {
+                formData.append('newProductType', newProductTypeInput.value.trim()); // Send the new type input value
+            }
+            // The backend will use these two to determine the final productType
             
-            formData.append('gstRate', document.getElementById('product-gst-rate').value);
-            formData.append('isActive', document.getElementById('product-is-active').checked);
+            formData.append('gstRate', productGstRateInput.value);
+            formData.append('isActive', productIsActiveCheckbox.checked);
 
-            // Append dimensions
             const dimensionElements = dimensionsContainer.querySelectorAll('.dimension-entry');
             if (dimensionElements.length === 0) {
-                adminFeedback.textContent = 'Please add at least one dimension and price.';
-                adminFeedback.className = 'feedback-error';
+                displayFeedback('Please add at least one dimension and price.', 'error');
                 return;
             }
             dimensionElements.forEach((entry, index) => {
@@ -229,88 +276,70 @@
                 formData.append(`dimensions[${index}][basePrice]`, entry.querySelector(`input[name^="basePrice-"]`).value);
             });
 
-            // Append files (conceptual - backend needs to handle this)
-            const baseImageFile = document.getElementById('product-base-image').files[0];
-            if (baseImageFile) {
-                formData.append('baseImage', baseImageFile); // Name 'baseImage' should match multer field name
+            if (productBaseImageInput.files[0]) {
+                formData.append('baseImage', productBaseImageInput.files[0]);
+            } else if (editMode && existingBaseImageUrlInput.value) {
+                // If in edit mode and no new base image, send existing URL to potentially keep it
+                formData.append('baseImageURL', existingBaseImageUrlInput.value);
             }
 
-            const additionalImageFiles = document.getElementById('product-additional-images').files;
-            if (additionalImageFiles.length > 0) {
-                for (let i = 0; i < additionalImageFiles.length; i++) {
-                    formData.append('additionalImages', additionalImageFiles[i]); // Name 'additionalImages'
+
+            if (productAdditionalImagesInput.files.length > 0) {
+                for (let i = 0; i < productAdditionalImagesInput.files.length; i++) {
+                    formData.append('additionalImages', productAdditionalImagesInput.files[i]);
                 }
             }
-            
-            // For now, since backend expects URLs, we'll send the placeholder text if no file is selected
-            // This part needs to be removed/changed when backend handles file uploads
-            if (!baseImageFile && document.getElementById('product-base-image-url')) {
-                 formData.append('baseImageURL', document.getElementById('product-base-image-url').value);
-            }
-            if (additionalImageFiles.length === 0 && document.getElementById('product-additional-image-urls')) {
-                const urls = document.getElementById('product-additional-image-urls').value;
-                 if (urls.trim() !== '') {
-                    urls.split(',').map(url => url.trim()).filter(url => url).forEach(url => formData.append('additionalImageURLs[]', url));
-                } else {
-                     formData.append('additionalImageURLs', []); // Send empty array if input is blank
-                }
-            }
+            // Note: Handling existing additional images during an update is more complex
+            // (e.g., sending a list of URLs to keep, deleting others). 
+            // This form currently replaces all additional images if new ones are selected.
 
+            let url = `${BACKEND_URL}/api/admin/products`;
+            let method = 'POST';
 
-            console.log("Sending product data to backend (FormData):");
-            for (let [key, value] of formData.entries()) {
-                console.log(`${key}:`, value);
+            if (editMode && productIdInput.value) {
+                url = `${BACKEND_URL}/api/admin/products/${productIdInput.value}`;
+                method = 'PUT';
             }
-
+            console.log(`Submitting to ${url} with method ${method}`);
 
             try {
-                // IMPORTANT: When sending FormData, do NOT set the 'Content-Type' header manually.
-                // The browser will set it automatically with the correct boundary.
-                const response = await fetch(`${BACKEND_URL}/api/admin/products`, {
-                    method: 'POST',
-                    body: formData 
-                    // headers: { 'Content-Type': 'application/json' } // REMOVE THIS LINE for FormData
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData,
+                    // DO NOT set Content-Type header for FormData, browser does it.
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    adminFeedback.textContent = 'Product added successfully!';
-                    adminFeedback.className = 'feedback-success';
-                    addProductForm.reset();
-                    dimensionsContainer.innerHTML = ''; 
-                    addDimensionEntry(); 
-                    newProductTypeContainer.style.display = 'none'; // Hide new type input
-                    newProductTypeInput.required = false;
-                    // TODO: Refresh the existing products list
-                    // fetchAndDisplayProducts(); 
+                    displayFeedback(`Product ${editMode ? 'updated' : 'added'} successfully!`, 'success');
+                    resetFormToCreateMode();
+                    fetchAndDisplayProducts(); 
                 } else {
-                    adminFeedback.textContent = `Error: ${result.message || response.statusText}`;
+                    let errorMsg = `Error: ${result.message || response.statusText}`;
                     if(result.errors) {
-                        let errorMessages = Object.values(result.errors).map(e => e.message).join('\n');
-                        adminFeedback.textContent += `\nDetails:\n${errorMessages}`;
+                        errorMsg += `\nDetails: ${Object.values(result.errors).map(e => e.message).join(', ')}`;
                     }
-                    adminFeedback.className = 'feedback-error';
+                    displayFeedback(errorMsg, 'error');
                 }
             } catch (error) {
-                console.error('Error adding product:', error);
-                adminFeedback.textContent = 'An unexpected error occurred. Please check console.';
-                adminFeedback.className = 'feedback-error';
+                console.error(`Error ${editMode ? 'updating' : 'adding'} product:`, error);
+                displayFeedback('An unexpected error occurred. Please check console.', 'error');
             }
         });
 
-        // Placeholder for fetching and displaying products (to be implemented)
         async function fetchAndDisplayProducts() {
-            const listContainer = document.getElementById('existing-products-list');
+            existingProductsList.innerHTML = '<p class="text-center text-gray-400">Loading products...</p>';
             try {
-                const response = await fetch(`${BACKEND_URL}/api/admin/products`); 
+                const response = await fetch(`${BACKEND_URL}/api/admin/products`);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.message || `HTTP error! status: ${response.status}`);
                 }
                 const products = await response.json();
                 
                 if (products.length === 0) {
-                    listContainer.innerHTML = '<p class="text-center text-gray-400">No products found.</p>';
+                    existingProductsList.innerHTML = '<p class="text-center text-gray-400">No products found.</p>';
                     return;
                 }
 
@@ -319,28 +348,149 @@
                     productsHtml += `
                         <li class="p-3 bg-gray-700 rounded-md shadow flex justify-between items-center">
                             <div>
-                                <h4 class="font-semibold text-lg text-gray-100">${product.name} <span class="text-xs ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span></h4>
-                                <p class="text-sm text-gray-400">${product.productType}</p>
+                                <h4 class="font-semibold text-lg text-gray-100">${product.name} 
+                                    <span class="text-xs ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span>
+                                </h4>
+                                <p class="text-sm text-gray-400">Type: ${product.productType}</p>
                                 <p class="text-sm text-gray-400">${product.dimensions.length} dimension(s)</p>
+                                ${product.baseImageURL ? `<img src="${product.baseImageURL}" alt="${product.name}" class="image-preview mt-1">` : ''}
                             </div>
                             <div>
-                                <button class="btn btn-secondary btn-sm mr-2 edit-product-btn" data-id="${product._id}"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="btn btn-warning btn-sm mr-2 edit-product-btn" data-id="${product._id}"><i class="fas fa-edit"></i> Edit</button>
                                 <button class="btn btn-danger btn-sm delete-product-btn" data-id="${product._id}"><i class="fas fa-trash"></i> Delete</button>
                             </div>
                         </li>
                     `;
                 });
                 productsHtml += '</ul>';
-                listContainer.innerHTML = productsHtml;
+                existingProductsList.innerHTML = productsHtml;
+
+                // Add event listeners for new edit/delete buttons
+                document.querySelectorAll('.edit-product-btn').forEach(button => {
+                    button.addEventListener('click', handleEditProduct);
+                });
+                document.querySelectorAll('.delete-product-btn').forEach(button => {
+                    button.addEventListener('click', handleDeleteProduct);
+                });
 
             } catch (error) {
                 console.error('Error fetching products:', error);
-                listContainer.innerHTML = '<p class="text-center text-red-500">Error loading products.</p>';
+                existingProductsList.innerHTML = `<p class="text-center text-red-500">Error loading products: ${error.message}</p>`;
             }
         }
 
-        // Call fetchAndDisplayProducts on page load
-        // window.addEventListener('load', fetchAndDisplayProducts); // Uncomment when backend is ready
+        async function handleEditProduct(event) {
+            const productId = event.currentTarget.dataset.id;
+            adminFeedback.textContent = 'Loading product for editing...';
+            adminFeedback.className = 'text-sky-400';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/products/${productId}`);
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.message || `HTTP error! status: ${response.status}`);
+                }
+                const product = await response.json();
+
+                formTitle.textContent = 'Edit Product';
+                productIdInput.value = product._id;
+                productNameInput.value = product.name;
+                productDescriptionInput.value = product.description;
+                
+                // Set product type dropdown
+                const existingTypeOption = Array.from(productTypeSelect.options).find(opt => opt.value === product.productType);
+                if (existingTypeOption) {
+                    productTypeSelect.value = product.productType;
+                    newProductTypeContainer.style.display = 'none';
+                    newProductTypeInput.required = false;
+                    newProductTypeInput.value = '';
+                } else { // Type is not in standard list, must be "other"
+                    productTypeSelect.value = 'other';
+                    newProductTypeContainer.style.display = 'block';
+                    newProductTypeInput.value = product.productType; // Display the custom type
+                    newProductTypeInput.required = true;
+                }
+
+                productGstRateInput.value = product.gstRate;
+                productIsActiveCheckbox.checked = product.isActive;
+
+                dimensionsContainer.innerHTML = ''; // Clear existing dimension fields
+                if (product.dimensions && product.dimensions.length > 0) {
+                    product.dimensions.forEach(dim => addDimensionEntry(dim));
+                } else {
+                    addDimensionEntry(); // Add one empty if none exist
+                }
+
+                // Display existing images (conceptual)
+                baseImagePreviewContainer.innerHTML = '';
+                if (product.baseImageURL) {
+                    baseImagePreviewContainer.innerHTML = `<img src="${product.baseImageURL}" alt="Base Image" class="image-preview">`;
+                    existingBaseImageUrlInput.value = product.baseImageURL; // Store for submission if not changed
+                } else {
+                     existingBaseImageUrlInput.value = '';
+                }
+
+                additionalImagesPreviewContainer.innerHTML = '';
+                if (product.additionalImageURLs && product.additionalImageURLs.length > 0) {
+                    product.additionalImageURLs.forEach(url => {
+                        additionalImagesPreviewContainer.innerHTML += `<img src="${url}" alt="Additional Image" class="image-preview">`;
+                    });
+                }
+                // Clear file inputs as we can't pre-populate them
+                productBaseImageInput.value = '';
+                productAdditionalImagesInput.value = '';
+
+
+                submitProductBtn.textContent = 'Update Product';
+                submitProductBtn.classList.remove('btn-primary');
+                submitProductBtn.classList.add('btn-warning');
+                cancelEditBtn.classList.remove('hidden-field');
+                editMode = true;
+                adminFeedback.textContent = '';
+                adminFeedback.className = '';
+                window.scrollTo({ top: productFormSection.offsetTop, behavior: 'smooth' });
+
+
+            } catch (error) {
+                console.error('Error fetching product for edit:', error);
+                displayFeedback(`Error loading product: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleDeleteProduct(event) {
+            const productId = event.currentTarget.dataset.id;
+            const productName = event.currentTarget.closest('li').querySelector('h4').firstChild.textContent.trim();
+            
+            if (!confirm(`Are you sure you want to delete the product "${productName}"?`)) {
+                return;
+            }
+
+            adminFeedback.textContent = 'Deleting product...';
+            adminFeedback.className = 'text-sky-400';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/products/${productId}`, {
+                    method: 'DELETE',
+                    // Add Authorization header here if/when admin auth is implemented
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayFeedback(result.message || 'Product deleted successfully!', 'success');
+                    fetchAndDisplayProducts(); // Refresh the list
+                } else {
+                    displayFeedback(`Error: ${result.message || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                displayFeedback('An unexpected error occurred while deleting. Please check console.', 'error');
+            }
+        }
+        
+        // Initial setup
+        resetFormToCreateMode(); // Ensure form is in "Add" mode initially
+        fetchAndDisplayProducts(); // Load products when the page loads
+
     </script>
 </body>
 </html>
