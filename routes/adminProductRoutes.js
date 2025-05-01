@@ -3,8 +3,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const Product = require('../models/Product'); 
-// Import the GCS upload service and initialization status flag
-const { uploadFileToGCS, isGCSInitialized } = require('../services/imageUploadService'); 
+// Import the GCS upload service, initialization status flag, and delete function
+const { uploadFileToGCS, deleteFileFromGCS, isGCSInitialized } = require('../services/imageUploadService'); 
 
 // --- Multer Configuration ---
 // Store files in memory as buffers, good for passing to GCS/Cloudinary directly
@@ -190,13 +190,11 @@ router.put('/:id', upload.fields([
     }
 
     try {
-        const updateData = {}; // Initialize an empty object for updates
+        const updateData = {}; 
 
-        // Populate updateData with fields from req.body if they exist and are meant to be updated
         if (req.body.name !== undefined) updateData.name = req.body.name;
         if (req.body.description !== undefined) updateData.description = req.body.description;
         
-        // Handle productType update
         if (req.body.productTypeSelect) { 
             if (req.body.productTypeSelect.trim().toLowerCase() === 'other') {
                 updateData.productType = req.body.newProductType ? req.body.newProductType.trim().toLowerCase().replace(/\s+/g, '-') : '';
@@ -210,22 +208,11 @@ router.put('/:id', upload.fields([
         
         if (req.body.gstRate !== undefined) updateData.gstRate = parseFloat(req.body.gstRate);
         
-        // Correctly handle 'isActive' which might not be present if checkbox is unchecked with FormData
         if (Object.prototype.hasOwnProperty.call(req.body, 'isActive')) {
             updateData.isActive = String(req.body.isActive).toLowerCase() === 'true';
-        } else {
-            // If 'isActive' is not in req.body at all (e.g., unchecked checkbox wasn't sent by FormData)
-            // we assume it should be false for an update, unless you want to preserve existing value if not sent.
-            // To preserve, you'd fetch the product first and only update if 'isActive' is in req.body.
-            // For simplicity here, if not sent, it might not be updated by $set unless explicitly set.
-            // If you want an unchecked box to explicitly set to false, the frontend should send 'false'.
-            // For now, if it's not in req.body, $set won't touch it.
-            // If you want it to default to false if not present in an update:
-            // updateData.isActive = false; // (but this might not be desired for partial updates)
         }
 
 
-        // Parse dimensions if they are sent in the update
         if (req.body.dimensions && Array.isArray(req.body.dimensions)) {
             console.log("Admin Products: Parsing dimensions from req.body.dimensions for PUT request");
             const tempParsedDimensions = req.body.dimensions.map((dim, index) => {
@@ -249,14 +236,25 @@ router.put('/:id', upload.fields([
             console.log("Admin Products: Parsed dimensions for update:", updateData.dimensions);
         }
 
+        const existingProduct = await Product.findById(req.params.id);
+        if (!existingProduct) {
+             console.log(`Admin Products: Product not found for update with ID: ${req.params.id}`);
+            return res.status(404).json({ message: 'Product not found' });
+        }
 
         // Handle Base Image Update
         if (req.files && req.files.baseImage && req.files.baseImage[0]) {
             console.log("Updating base image in GCS...");
+            if (existingProduct.baseImageURL && isGCSInitialized) { // Delete old image if it exists
+                await deleteFileFromGCS(existingProduct.baseImageURL).catch(err => console.error("Failed to delete old base image from GCS:", err.message));
+            }
             const baseImageResultUrl = await uploadFileToGCS(req.files.baseImage[0].buffer, req.files.baseImage[0].originalname, "gamma_ortho_products/base_images/");
             updateData.baseImageURL = baseImageResultUrl;
             console.log("Base image updated:", updateData.baseImageURL);
         } else if (Object.prototype.hasOwnProperty.call(req.body, 'baseImageURL') && (req.body.baseImageURL === '' || req.body.baseImageURL === null || req.body.baseImageURL === "null")) { 
+            if (existingProduct.baseImageURL && isGCSInitialized) { // Delete old image if requested
+                 await deleteFileFromGCS(existingProduct.baseImageURL).catch(err => console.error("Failed to delete old base image from GCS:", err.message));
+            }
             updateData.baseImageURL = null; 
         }
 
@@ -264,6 +262,12 @@ router.put('/:id', upload.fields([
         // Handle Additional Images Update
         if (req.files && req.files.additionalImages && req.files.additionalImages.length > 0) {
             console.log(`Uploading ${req.files.additionalImages.length} new additional images to GCS...`);
+            // For simplicity, this replaces all existing additional images.
+            // Delete old additional images first
+            if (existingProduct.additionalImageURLs && existingProduct.additionalImageURLs.length > 0 && isGCSInitialized) {
+                const deletionPromises = existingProduct.additionalImageURLs.map(url => deleteFileFromGCS(url).catch(err => console.error("Failed to delete an old additional image:", err.message)));
+                await Promise.allSettled(deletionPromises);
+            }
             const uploadPromises = req.files.additionalImages.map(file => 
                 uploadFileToGCS(file.buffer, file.originalname, "gamma_ortho_products/additional_images/")
             );
@@ -271,9 +275,17 @@ router.put('/:id', upload.fields([
             updateData.additionalImageURLs = additionalImageResults; 
             console.log("Additional images updated/added:", updateData.additionalImageURLs);
         } else if (Object.prototype.hasOwnProperty.call(req.body, 'additionalImageURLs')) {
+            // If frontend sends an array (e.g., to keep some, remove others, or clear all)
+            // This assumes req.body.additionalImageURLs is the desired final list of URLs (if any)
+            // More complex logic would be needed to compare with existingProduct.additionalImageURLs and delete only those removed.
+            // For now, if it's an empty array or string, we clear it.
             if (Array.isArray(req.body.additionalImageURLs)) {
                  updateData.additionalImageURLs = req.body.additionalImageURLs.map(url => String(url).trim()).filter(url => url && url !== 'null');
             } else if (req.body.additionalImageURLs === '' || req.body.additionalImageURLs === null) {
+                if (existingProduct.additionalImageURLs && existingProduct.additionalImageURLs.length > 0 && isGCSInitialized) {
+                    const deletionPromises = existingProduct.additionalImageURLs.map(url => deleteFileFromGCS(url).catch(err => console.error("Failed to delete an old additional image:", err.message)));
+                    await Promise.allSettled(deletionPromises);
+                }
                 updateData.additionalImageURLs = [];
             }
         }
@@ -289,6 +301,7 @@ router.put('/:id', upload.fields([
         );
 
         if (!updatedProduct) {
+            // This case should ideally be caught by the findById earlier, but as a safeguard:
             console.log(`Admin Products: Product not found for update with ID: ${req.params.id}`);
             return res.status(404).json({ message: 'Product not found' });
         }
@@ -307,14 +320,44 @@ router.put('/:id', upload.fields([
 router.delete('/:id', async (req, res) => {
     console.log(`Admin Products: Received DELETE request for product ID: ${req.params.id}`);
     try {
-        const product = await Product.findByIdAndDelete(req.params.id);
+        const product = await Product.findById(req.params.id); // Find first to get image URLs
         if (!product) {
             console.log(`Admin Products: Product not found for delete with ID: ${req.params.id}`);
             return res.status(404).json({ message: 'Product not found' });
         }
         
-        console.log("Admin Products: Product deleted successfully:", product._id);
-        res.status(200).json({ message: 'Product deleted successfully' });
+        // Attempt to delete images from GCS if GCS is initialized
+        if (isGCSInitialized) {
+            const imageDeletionPromises = [];
+            if (product.baseImageURL) {
+                console.log("Deleting base image from GCS:", product.baseImageURL);
+                imageDeletionPromises.push(deleteFileFromGCS(product.baseImageURL).catch(err => {
+                    console.error(`Failed to delete base image ${product.baseImageURL} from GCS:`, err.message);
+                    // Don't let GCS deletion failure stop DB deletion, but log it.
+                }));
+            }
+            if (product.additionalImageURLs && product.additionalImageURLs.length > 0) {
+                product.additionalImageURLs.forEach(url => {
+                    console.log("Deleting additional image from GCS:", url);
+                    imageDeletionPromises.push(deleteFileFromGCS(url).catch(err => {
+                        console.error(`Failed to delete additional image ${url} from GCS:`, err.message);
+                    }));
+                });
+            }
+
+            if (imageDeletionPromises.length > 0) {
+                await Promise.allSettled(imageDeletionPromises); // Wait for all deletions to attempt
+                console.log("Attempted deletion of associated GCS images.");
+            }
+        } else {
+            console.warn("GCS not initialized. Skipping image deletion from GCS for product ID:", product._id);
+        }
+
+        // Delete product from MongoDB
+        await Product.findByIdAndDelete(req.params.id);
+        
+        console.log("Admin Products: Product deleted successfully from DB:", product._id);
+        res.status(200).json({ message: 'Product deleted successfully from database. Associated images deletion attempted if GCS was available.' });
     } catch (error) {
         console.error(`Admin Products: Error deleting product ID ${req.params.id}:`, error);
         res.status(500).json({ message: 'Error deleting product', error: error.message });
