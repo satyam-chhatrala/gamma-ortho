@@ -202,17 +202,17 @@
             formData.append('name', document.getElementById('product-name').value);
             formData.append('description', document.getElementById('product-description').value);
             
-            let productTypeSelect = productTypeSelect.value;
-            if (productTypeSelect === 'other') {
+            let productType = productTypeSelect.value;
+            if (productType === 'other') {
                 const newType = newProductTypeInput.value.trim();
                 if (!newType) {
                     adminFeedback.textContent = 'Please specify the new product type.';
                     adminFeedback.className = 'feedback-error';
                     return;
                 }
-                productTypeSelect = newType.toLowerCase().replace(/\s+/g, '-'); // Sanitize
+                productType = newType.toLowerCase().replace(/\s+/g, '-'); // Sanitize
             }
-            formData.append('productTypeSelect', productTypeSelect);
+            formData.append('productType', productType);
             
             formData.append('gstRate', document.getElementById('product-gst-rate').value);
             formData.append('isActive', document.getElementById('product-is-active').checked);
