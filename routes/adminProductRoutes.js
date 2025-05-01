@@ -209,25 +209,19 @@ router.put('/:id', upload.fields([
         }
         
         if (req.body.gstRate !== undefined) updateData.gstRate = parseFloat(req.body.gstRate);
-        // FormData sends checkbox values as 'on' or 'true' (if value attribute is set) or not at all if unchecked.
-        // If it's not in req.body, it means it was unchecked (or not sent).
-        // If it is in req.body, it means it was checked.
-        if (req.body.hasOwnProperty('isActive')) { // Check if the field was sent
-             updateData.isActive = String(req.body.isActive).toLowerCase() === 'true';
+        
+        // Correctly handle 'isActive' which might not be present if checkbox is unchecked with FormData
+        if (Object.prototype.hasOwnProperty.call(req.body, 'isActive')) {
+            updateData.isActive = String(req.body.isActive).toLowerCase() === 'true';
         } else {
-            // If isActive is not sent at all by the form (e.g. checkbox was part of form but unchecked and not sent)
-            // you might want to explicitly set it to false for updates, or leave it to not update.
-            // For now, if it's not sent, we don't update it. If you want unchecking to mean false,
-            // your frontend should send 'false' or you handle it here.
-            // A common way is: updateData.isActive = !!req.body.isActive; (converts 'on' to true, undefined to false)
-            // But since your frontend sends 'true'/'false' string:
-            if (req.body.isActive === undefined && Object.keys(req.body).includes('isActive')) { 
-                // This case is tricky with FormData if unchecked boxes are not sent.
-                // Assuming if 'isActive' is not in req.body for an update, we don't change it.
-                // If you want an unchecked box to explicitly set to false, the frontend should send 'false'.
-            } else if (req.body.isActive !== undefined) {
-                 updateData.isActive = String(req.body.isActive).toLowerCase() === 'true';
-            }
+            // If 'isActive' is not in req.body at all (e.g., unchecked checkbox wasn't sent by FormData)
+            // we assume it should be false for an update, unless you want to preserve existing value if not sent.
+            // To preserve, you'd fetch the product first and only update if 'isActive' is in req.body.
+            // For simplicity here, if not sent, it might not be updated by $set unless explicitly set.
+            // If you want an unchecked box to explicitly set to false, the frontend should send 'false'.
+            // For now, if it's not in req.body, $set won't touch it.
+            // If you want it to default to false if not present in an update:
+            // updateData.isActive = false; // (but this might not be desired for partial updates)
         }
 
 
@@ -249,10 +243,6 @@ router.put('/:id', upload.fields([
             if (req.body.dimensions.length > 0 && tempParsedDimensions.length === 0) {
                 return res.status(400).json({ message: 'Provided dimensions array was empty or contained only invalid data.' });
             }
-            // Only assign to updateData if there are valid dimensions to update.
-            // If tempParsedDimensions is empty but req.body.dimensions was not, it means all were invalid.
-            // If req.body.dimensions was empty, this ensures we don't accidentally set dimensions to [].
-            // To explicitly clear dimensions, frontend should send dimensions: []
             if (tempParsedDimensions.length > 0 || (req.body.dimensions && req.body.dimensions.length === 0) ) {
                  updateData.dimensions = tempParsedDimensions; 
             }
@@ -267,9 +257,7 @@ router.put('/:id', upload.fields([
             updateData.baseImageURL = baseImageResultUrl;
             console.log("Base image updated:", updateData.baseImageURL);
         } else if (Object.prototype.hasOwnProperty.call(req.body, 'baseImageURL') && (req.body.baseImageURL === '' || req.body.baseImageURL === null || req.body.baseImageURL === "null")) { 
-            // Check if frontend explicitly wants to remove the image
             updateData.baseImageURL = null; 
-            // TODO: Delete old image from GCS if product had one
         }
 
 
@@ -288,7 +276,6 @@ router.put('/:id', upload.fields([
             } else if (req.body.additionalImageURLs === '' || req.body.additionalImageURLs === null) {
                 updateData.additionalImageURLs = [];
             }
-            // TODO: Delete all existing additional images from GCS if additionalImageURLs is set to []
         }
         
         if (Object.keys(updateData).length === 0 && (!req.files || (!req.files.baseImage && !req.files.additionalImages))) {
