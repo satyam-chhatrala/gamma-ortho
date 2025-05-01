@@ -230,14 +230,12 @@
                 <div id="product-filter-options-container" class="product-filter-container max-w-3xl mx-auto hidden">
                     <h3>Filter by Product Type:</h3>
                     <div id="product-type-filter-options" class="product-filter-options">
-                        {/* Static filter options, can be dynamically populated if product types are dynamic */}
                         <label><input type="checkbox" class="product-type-filter" value="all" checked> All Products</label>
                         <label><input type="checkbox" class="product-type-filter" value="wire-pin"> Wire and Pin</label>
                         <label><input type="checkbox" class="product-type-filter" value="ao-fixator"> A O-Fixator</label>
                         <label><input type="checkbox" class="product-type-filter" value="jess-fixator"> Jess Fixator</label>
                         <label><input type="checkbox" class="product-type-filter" value="ring-fixator"> Ring Fixator</label>
                         <label><input type="checkbox" class="product-type-filter" value="rail-fixator"> Rail Fixator</label>
-                        {/* Add more static types or plan for dynamic population */}
                     </div>
                 </div>
                 
@@ -543,11 +541,15 @@
                 populateDimensionDropdownsOnCard(card, product.dimensions, product._id);
 
                 card.querySelector('.add-to-order-btn').addEventListener('click', () => {
+                    console.log('Add to cart clicked for product:', product.name, product._id); // DEBUG
+
                     const quantityInput = card.querySelector(`#qty-${product._id}`);
                     const dimensionSelect = card.querySelector(`#dim-${product._id}`);
                     const quantity = parseInt(quantityInput.value);
                     const selectedDimensionName = dimensionSelect.value;
                     
+                    console.log('Selected dimension name:', selectedDimensionName, 'Quantity:', quantity); // DEBUG
+
                     if (!selectedDimensionName) {
                         orderFeedback.textContent = 'Please select a dimension for the product.';
                         orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
@@ -556,13 +558,23 @@
                     }
 
                     const selectedDimensionData = product.dimensions.find(d => d.dimensionName === selectedDimensionName);
+                    console.log('Found dimension data:', selectedDimensionData); // DEBUG
+                    console.log('Product GST rate:', product.gstRate); // DEBUG
 
-                    if (quantity > 0 && selectedDimensionData) {
+
+                    if (quantity > 0 && selectedDimensionData && typeof product.gstRate === 'number') { 
                         addItemToOrder(product._id, product.name, selectedDimensionName, quantity, selectedDimensionData.basePrice, product.gstRate);
                         quantityInput.value = '1'; 
                     } else {
-                        orderFeedback.textContent = 'Please enter a valid quantity or ensure dimension is selected.';
+                        let errorMsg = 'Please enter a valid quantity.';
+                        if (!selectedDimensionData) {
+                            errorMsg = 'Could not find data for the selected dimension.';
+                        } else if (typeof product.gstRate !== 'number') {
+                            errorMsg = 'Product GST rate is missing or invalid.';
+                        }
+                        orderFeedback.textContent = errorMsg;
                         orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                        console.error("Add to cart error:", errorMsg, "Selected Dim Data:", selectedDimensionData, "GST Rate:", product.gstRate);
                         setTimeout(() => orderFeedback.textContent = '', 3000);
                     }
                 });
@@ -624,7 +636,7 @@
             const searchTerm = productSearchInput ? productSearchInput.value.toLowerCase().trim() : "";
             
             const selectedTypes = [];
-            let allProductsCheckboxChecked = true; // Assume true if element doesn't exist
+            let allProductsCheckboxChecked = true; 
             const allCheckbox = document.querySelector('.product-type-filter[value="all"]');
             if (allCheckbox) {
                 allProductsCheckboxChecked = allCheckbox.checked;
@@ -684,7 +696,46 @@
         const orderFeedback = document.getElementById('order-feedback');
         
         function renderOrderSummary() { /* ... (as before, ensure elements exist before accessing properties) ... */ }
-        function addItemToOrder(baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate) { /* ... (as before) ... */ }
+        function addItemToOrder(baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate) { 
+            console.log('addItemToOrder called with:', {baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate}); // DEBUG
+            const priceIncGst = basePrice * (1 + gstRate);
+            const variantId = `${baseProductId}-${selectedDimensionName.replace(/\s+/g, '-')}`;
+
+            let productGroup = currentOrder.find(pg => pg.baseProductId === baseProductId);
+
+            if (productGroup) { 
+                let variant = productGroup.variants.find(v => v.variantId === variantId);
+                if (variant) { 
+                    variant.quantity += quantity;
+                } else { 
+                    productGroup.variants.push({ 
+                        variantId: variantId,
+                        dimension: selectedDimensionName,
+                        basePrice: basePrice,
+                        gstRate: gstRate,
+                        priceIncGst: priceIncGst, 
+                        quantity: quantity 
+                    });
+                }
+            } else { 
+                currentOrder.push({
+                    baseProductId: baseProductId,
+                    baseProductName: baseProductName,
+                    variants: [{
+                        variantId: variantId,
+                        dimension: selectedDimensionName,
+                        basePrice: basePrice,
+                        gstRate: gstRate,
+                        priceIncGst: priceIncGst, 
+                        quantity: quantity 
+                    }]
+                });
+            }
+            orderFeedback.textContent = `Added ${quantity} x ${baseProductName} (${selectedDimensionName}) to your cart.`;
+            orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
+            setTimeout(() => orderFeedback.textContent = '', 3000);
+            renderOrderSummary();
+        }
         function removeItemFromOrder(variantIdToRemove) { /* ... (as before) ... */ }
 
         if(orderItemsContainer) orderItemsContainer.addEventListener('click', (event) => { /* ... (as before) ... */ });
