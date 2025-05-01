@@ -7,53 +7,46 @@ const Product = require('../models/Product');
 const { uploadFileToGCS, isGCSInitialized } = require('../services/imageUploadService'); 
 
 // --- Multer Configuration ---
-// Store files in memory as buffers, good for passing to GCS/Cloudinary directly
 const storage = multer.memoryStorage(); 
 const upload = multer({ 
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit per file
     fileFilter: function (req, file, cb) {
-        // Accept images only
         if (!file.mimetype.startsWith('image/')) {
             req.fileValidationError = 'Only image files are allowed!';
-            // To reject this file pass `false`, like so:
             return cb(null, false);
         }
-        // To accept the file pass `true`, like so:
         cb(null, true);
     }
 });
 
 // POST /api/admin/products - Create a new product
 router.post('/', upload.fields([
-    { name: 'baseImage', maxCount: 1 },         // Matches the 'name' attribute in your admin.html form
-    { name: 'additionalImages', maxCount: 5 }  // Matches the 'name' attribute in your admin.html form
+    { name: 'baseImage', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 5 }  
 ]), async (req, res) => {
     console.log("Admin Products: Received POST request to create product");
-    console.log("Admin Products: req.body received:", req.body); // Log the entire body
+    console.log("Admin Products: req.body received:", JSON.stringify(req.body, null, 2)); 
 
     if (req.fileValidationError) {
         console.error("Admin Products: File validation error:", req.fileValidationError);
         return res.status(400).json({ message: req.fileValidationError });
     }
 
-    // Check if GCS is initialized before attempting to process files if any files were sent
     if ((req.files && (req.files.baseImage || req.files.additionalImages)) && !isGCSInitialized) {
         console.error("Admin Products: Attempted image upload, but GCS is not initialized.");
         return res.status(503).json({ message: 'Image Storage Service (GCS) is not properly initialized on the server. Please check backend logs and configuration.' });
     }
 
     try {
-        // --- Refined Initial Validation ---
         if (!req.body.name || req.body.name.trim() === "") {
             return res.status(400).json({ message: 'Product name is required.' });
         }
-        if (!req.body.productType || req.body.productType.trim() === "") {
-            // This means the default "-- Select Type --" (with value="") was likely submitted
+        if (!req.body.productTypeSelect || req.body.productTypeSelect.trim() === "") {
             return res.status(400).json({ message: 'Product type selection is required.' });
         }
         
-        let finalProductType = req.body.productType.trim().toLowerCase();
+        let finalProductType = req.body.productTypeSelect.trim().toLowerCase();
         if (finalProductType === 'other') {
             if (!req.body.newProductType || req.body.newProductType.trim() === '') {
                 return res.status(400).json({ message: 'Please specify the new product type when "Other" is selected.' });
@@ -62,59 +55,40 @@ router.post('/', upload.fields([
         }
         
         let parsedDimensions = [];
-        console.log("Admin Products: Starting dimension parsing loop...");
-        try {
-            let i = 0;
-            // Loop as long as a dimensionName for the current index exists or a reasonable limit
-            // FormData might send empty strings for fields that were present but cleared,
-            // so checking for !== undefined is important.
-            while(req.body[`dimensions[${i}][dimensionName]`] !== undefined || req.body[`dimensions[${i}][basePrice]`] !== undefined) { 
-                const dimName = req.body[`dimensions[${i}][dimensionName]`];
-                const dimPrice = req.body[`dimensions[${i}][basePrice]`];
-
-                console.log(`Admin Products: Parsing dimension index ${i}:`);
-                console.log(`  dimName raw: '${dimName}' (type: ${typeof dimName})`);
-                console.log(`  dimPrice raw: '${dimPrice}' (type: ${typeof dimPrice})`);
+        console.log("Admin Products: Attempting to parse dimensions from req.body.dimensions");
+        if (req.body.dimensions && Array.isArray(req.body.dimensions)) {
+            req.body.dimensions.forEach((dim, index) => {
+                console.log(`Admin Products: Processing dimension index ${index} from array:`, dim);
+                const dimName = dim.dimensionName;
+                const dimPrice = dim.basePrice;
 
                 const isDimNameValid = dimName && dimName.trim() !== "";
-                const isDimPriceValid = dimPrice && String(dimPrice).trim() !== "" && !isNaN(parseFloat(dimPrice));
+                const isDimPriceValid = dimPrice !== undefined && String(dimPrice).trim() !== "" && !isNaN(parseFloat(dimPrice));
                 
-                console.log(`  isDimNameValid: ${isDimNameValid}`);
-                console.log(`  isDimPriceValid: ${isDimPriceValid}`);
-
+                console.log(`  Dimension index ${index} - Name: '${dimName}', Price: '${dimPrice}'`);
+                console.log(`  isDimNameValid: ${isDimNameValid}, isDimPriceValid: ${isDimPriceValid}`);
 
                 if (isDimNameValid && isDimPriceValid) {
                     parsedDimensions.push({
                         dimensionName: dimName.trim(),
                         basePrice: parseFloat(dimPrice)
                     });
-                    console.log(`  Dimension index ${i} ADDED.`);
-                } else if (dimName || dimPrice) { 
-                    // Only throw error if there's partial data for an entry that seems intended
-                    console.warn(`  Dimension index ${i} SKIPPED due to incomplete/invalid data.`);
-                    // If you want to be stricter and fail if any dimension entry is partial:
-                    // throw new Error(`Incomplete or invalid data for dimension at index ${i}. Both name and a valid price are required.`);
+                    console.log(`  Dimension index ${index} ADDED.`);
                 } else {
-                    // Both are undefined/empty, likely end of submitted dimension fields
-                    console.log(`  Dimension index ${i} has no name or price, stopping parse for this index.`);
-                    break; 
+                    console.warn(`  Dimension index ${index} SKIPPED due to incomplete/invalid data.`);
                 }
-                i++;
-                if (i > 20) { // Safety break for the loop, adjust if you expect more dimensions
-                    console.warn("Admin Products: Exceeded maximum dimension parsing attempts (20).");
-                    break;
-                }
-            }
-            console.log("Admin Products: Dimension parsing loop finished. Parsed dimensions:", parsedDimensions);
-
-
-            if (parsedDimensions.length === 0) {
-                return res.status(400).json({ message: 'At least one complete and valid dimension (name and price) is required.' });
-            }
-        } catch (parseError) {
-            console.error("Error parsing dimensions:", parseError);
-            return res.status(400).json({ message: 'Invalid dimensions data format. ' + parseError.message });
+            });
+        } else {
+            console.warn("Admin Products: req.body.dimensions is not an array or is missing. FormData might not be parsed as expected for complex objects/arrays by the middleware if not named correctly on client-side.");
         }
+        
+        console.log("Admin Products: Dimension parsing finished. Parsed dimensions count:", parsedDimensions.length);
+        console.log("Admin Products: Parsed dimensions content:", parsedDimensions);
+
+        if (parsedDimensions.length === 0) {
+            return res.status(400).json({ message: 'At least one complete and valid dimension (name and price) is required. Check submitted dimension data.' });
+        }
+
         let baseImageURL = null; 
         let additionalImageURLs = [];
 
@@ -144,7 +118,7 @@ router.post('/', upload.fields([
         const newProductData = {
             name: req.body.name,
             description: req.body.description,
-            productType: finalProductType, // Use the derived finalProductType
+            productType: finalProductType, 
             baseImageURL: baseImageURL,
             additionalImageURLs: additionalImageURLs,
             dimensions: parsedDimensions,
@@ -200,7 +174,7 @@ router.put('/:id', upload.fields([
     { name: 'additionalImages', maxCount: 5 }
 ]), async (req, res) => {
     console.log(`Admin Products: Received PUT request to update product ID: ${req.params.id}`);
-    console.log("Admin Products: Update req.body:", req.body);
+    console.log("Admin Products: Update req.body:", JSON.stringify(req.body, null, 2));
 
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
@@ -213,65 +187,53 @@ router.put('/:id', upload.fields([
 
     try {
         const updateData = { ...req.body }; 
-        // Remove raw dimensions from body to avoid conflicts if they are not being updated or parsed correctly
-        // We will re-add `updateData.dimensions` only if new valid dimension data is parsed.
+        // We will construct updateData.dimensions only if valid new dimension data is provided.
+        // If not, the existing dimensions in the DB will not be touched by $set unless explicitly set to an empty array.
         delete updateData.dimensions; 
 
-        let parsedDimensions = [];
-        let i = 0;
-        // Check if new dimension data is being sent by looking for the first dimension name
-        if (req.body[`dimensions[${i}][dimensionName]`] !== undefined) { 
-            while(req.body[`dimensions[${i}][dimensionName]`] !== undefined) {
-                 const dimName = req.body[`dimensions[${i}][dimensionName]`];
-                 const dimPrice = req.body[`dimensions[${i}][basePrice]`];
-                 if (dimName && dimName.trim() !== "" && dimPrice && !isNaN(parseFloat(dimPrice))) {
-                    parsedDimensions.push({
-                        dimensionName: dimName.trim(),
-                        basePrice: parseFloat(dimPrice)
-                    });
-                } else if (dimName || dimPrice) { 
-                    throw new Error(`Incomplete or invalid data for dimension at index ${i} during update. Both name and a valid price are required.`);
+        if (req.body.dimensions && Array.isArray(req.body.dimensions)) {
+            console.log("Admin Products: Parsing dimensions from req.body.dimensions for PUT request");
+            const tempParsedDimensions = req.body.dimensions.map((dim, index) => {
+                const dimName = dim.dimensionName;
+                const dimPrice = dim.basePrice;
+                const isDimNameValid = dimName && dimName.trim() !== "";
+                const isDimPriceValid = dimPrice !== undefined && String(dimPrice).trim() !== "" && !isNaN(parseFloat(dimPrice));
+                if (isDimNameValid && isDimPriceValid) {
+                    return { dimensionName: dimName.trim(), basePrice: parseFloat(dimPrice) };
                 }
-                i++;
+                console.warn(`  Dimension index ${index} in update data SKIPPED due to incomplete/invalid data.`);
+                return null; 
+            }).filter(dim => dim !== null); // Filter out any null entries from invalid pairs
+
+            if (req.body.dimensions.length > 0 && tempParsedDimensions.length === 0) {
+                // If dimensions array was sent but all items in it were invalid
+                return res.status(400).json({ message: 'Provided dimensions array was empty or contained only invalid data.' });
             }
-            if (parsedDimensions.length > 0) {
-                updateData.dimensions = parsedDimensions;
-            } else if (i > 0 && parsedDimensions.length === 0) { 
-                return res.status(400).json({ message: 'If dimensions are provided for update, at least one must be complete and valid.' });
+            if (tempParsedDimensions.length > 0) {
+                 updateData.dimensions = tempParsedDimensions; // Only assign if we have valid parsed dimensions
             }
-        } else if (req.body.dimensions && Array.isArray(req.body.dimensions)) {
-             updateData.dimensions = req.body.dimensions.map(d => ({
-                dimensionName: d.dimensionName,
-                basePrice: parseFloat(d.basePrice)
-            })).filter(d => d.dimensionName && d.dimensionName.trim() !== "" && d.basePrice && !isNaN(d.basePrice));
-            if (req.body.dimensions.length > 0 && updateData.dimensions.length === 0) {
-                 return res.status(400).json({ message: 'Provided dimensions array was empty or contained invalid data.' });
-            }
+            console.log("Admin Products: Parsed dimensions for update:", updateData.dimensions);
         }
-        // If 'updateData.dimensions' is not set here, Mongoose $set will not modify existing dimensions.
+        // If req.body.dimensions is not provided or not an array, updateData.dimensions remains undefined,
+        // so $set will not attempt to modify the dimensions field in the database.
 
-
-        // Handle Base Image Update
+        
         if (req.files && req.files.baseImage && req.files.baseImage[0]) {
             console.log("Updating base image in GCS...");
             const baseImageResultUrl = await uploadFileToGCS(req.files.baseImage[0].buffer, req.files.baseImage[0].originalname, "gamma_ortho_products/base_images/");
             updateData.baseImageURL = baseImageResultUrl;
             console.log("Base image updated:", updateData.baseImageURL);
         } else if (req.body.hasOwnProperty('baseImageURL') && (req.body.baseImageURL === '' || req.body.baseImageURL === null || req.body.baseImageURL === "null")) { 
-            // If frontend explicitly sends empty or null string to remove image
             updateData.baseImageURL = null; 
-            // TODO: Delete old image from GCS if product had one
         }
 
 
-        // Handle Additional Images Update
         if (req.files && req.files.additionalImages && req.files.additionalImages.length > 0) {
             console.log(`Uploading ${req.files.additionalImages.length} new additional images to GCS...`);
             const uploadPromises = req.files.additionalImages.map(file => 
                 uploadFileToGCS(file.buffer, file.originalname, "gamma_ortho_products/additional_images/")
             );
             const additionalImageResults = await Promise.all(uploadPromises);
-            // This replaces existing. For merging, fetch product, merge URLs, then save.
             updateData.additionalImageURLs = additionalImageResults; 
             console.log("Additional images updated/added:", updateData.additionalImageURLs);
         } else if (req.body.additionalImageURLs && Array.isArray(req.body.additionalImageURLs)) {
@@ -280,9 +242,8 @@ router.put('/:id', upload.fields([
             updateData.additionalImageURLs = [];
         }
         
-        // Handle productType update
-        if (req.body.productTypeSelect) { // Check if productTypeSelect is sent
-            if (req.body.productTypeSelect === 'other') {
+        if (req.body.productTypeSelect) { 
+            if (req.body.productTypeSelect.trim().toLowerCase() === 'other') {
                 updateData.productType = req.body.newProductType ? req.body.newProductType.trim().toLowerCase().replace(/\s+/g, '-') : '';
                 if (!updateData.productType) {
                     return res.status(400).json({ message: 'New product type cannot be empty if "Other" is selected for update.' });
@@ -291,8 +252,6 @@ router.put('/:id', upload.fields([
                 updateData.productType = req.body.productTypeSelect.trim().toLowerCase();
             }
         }
-        // If productTypeSelect is not in req.body, productType in updateData will not be set,
-        // and existing productType will remain unchanged by $set unless explicitly set to null.
         
         if (updateData.hasOwnProperty('isActive')) {
             updateData.isActive = String(updateData.isActive).toLowerCase() === 'true' || updateData.isActive === true;
@@ -301,10 +260,7 @@ router.put('/:id', upload.fields([
             updateData.gstRate = parseFloat(updateData.gstRate);
         }
 
-        // Remove fields that shouldn't be directly set if they are empty in the form but might exist in updateData
         if (updateData.name !== undefined && updateData.name.trim() === "") delete updateData.name; 
-        // Add similar checks for other fields if empty strings should not overwrite existing data with empty strings.
-        // However, for productType, it's handled above.
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id, 
