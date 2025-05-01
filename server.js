@@ -14,34 +14,32 @@ const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER;
 const SENDER_EMAIL_PASS = process.env.SENDER_EMAIL_PASS; 
 const OWNER_EMAIL = process.env.OWNER_EMAIL;       
 const COMPANY_NAME = 'Gamma Ortho Instruments';
-const FRONTEND_URL = process.env.FRONTEND_URL; 
-const MONGODB_URI = process.env.MONGODB_URI; // For MongoDB connection string
+
+// --- Environment Variables for CORS ---
+const CUSTOMER_FRONTEND_URL = process.env.FRONTEND_URL; // Your existing Netlify site for customers
+const ADMIN_FRONTEND_URL = process.env.ADMIN_FRONTEND_URL; // Your new Netlify site for the admin panel
 
 console.log("--------------------------------------------------");
 console.log("Backend Server Starting...");
 console.log("PORT from env:", process.env.PORT, "Effective port:", port);
-console.log("FRONTEND_URL for CORS (from env):", FRONTEND_URL);
-console.log("MONGODB_URI configured:", MONGODB_URI ? "Yes" : "No - Database connection will fail!");
+console.log("CUSTOMER_FRONTEND_URL for CORS (from env):", CUSTOMER_FRONTEND_URL);
+console.log("ADMIN_FRONTEND_URL for CORS (from env):", ADMIN_FRONTEND_URL);
+console.log("MONGODB_URI configured:", process.env.MONGODB_URI ? "Yes" : "No - Database connection will fail!");
 console.log("SENDER_EMAIL_USER configured:", SENDER_EMAIL_USER ? "Yes" : "No - Email sending will fail if credentials missing");
 console.log("OWNER_EMAIL configured:", OWNER_EMAIL ? "Yes" : "No - Owner emails will fail if missing");
 console.log("--------------------------------------------------");
 
 // --- Database Connection ---
-if (!MONGODB_URI) {
+if (!process.env.MONGODB_URI) {
     console.error("FATAL ERROR: MONGODB_URI environment variable is not set. Server cannot start without database connection string.");
-    process.exit(1); // Exit if DB connection string is critical and not set
+    process.exit(1); 
 } else {
-    mongoose.connect(MONGODB_URI, {
-        // useNewUrlParser: true, // No longer needed since Mongoose 6+
-        // useUnifiedTopology: true, // No longer needed since Mongoose 6+
-        // useCreateIndex: true, // No longer supported
-        // useFindAndModify: false // No longer supported
-    })
+    mongoose.connect(process.env.MONGODB_URI)
       .then(() => console.log('Successfully connected to MongoDB database via Mongoose.'))
       .catch(err => {
         console.error('MongoDB connection error:', err.message);
         console.error('Full MongoDB connection error object:', err);
-        process.exit(1); // Exit if DB connection fails on startup
+        process.exit(1); 
       });
     
     mongoose.connection.on('error', err => {
@@ -49,23 +47,36 @@ if (!MONGODB_URI) {
     });
 }
 
-// Configure CORS
-if (!FRONTEND_URL) {
-    console.warn("WARNING: FRONTEND_URL environment variable is not set on the hosting platform. CORS might be too permissive or fail in production.");
-    app.use(cors()); 
-    app.options('*', cors()); 
-    console.log("CORS configured to allow all origins due to missing FRONTEND_URL.");
+// --- Configure CORS to allow multiple origins ---
+const allowedOrigins = [];
+if (CUSTOMER_FRONTEND_URL) allowedOrigins.push(CUSTOMER_FRONTEND_URL);
+if (ADMIN_FRONTEND_URL) allowedOrigins.push(ADMIN_FRONTEND_URL);
+// You can also add localhost for development if needed, e.g., 'http://localhost:5500' for live server admin.html
+
+if (allowedOrigins.length === 0) {
+    console.warn("WARNING: No FRONTEND_URL or ADMIN_FRONTEND_URL environment variables set. CORS might be too permissive or fail.");
+    // Fallback to allow all if no specific origins are defined (less secure, for initial debugging only)
+    app.use(cors());
+    app.options('*', cors());
+    console.log("CORS configured to allow ALL origins due to missing frontend URL environment variables.");
 } else {
+    console.log("Allowed CORS origins:", allowedOrigins);
     const corsOptions = {
-      origin: FRONTEND_URL, 
+      origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests) OR if origin is in whitelist
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`;
+          console.error(msg);
+          callback(new Error(msg));
+        }
+      },
       optionsSuccessStatus: 200 
     };
     app.use(cors(corsOptions));
-    app.options('/api/orders/place-order', cors(corsOptions)); 
-    app.options('/api/inquiry/submit', cors(corsOptions));
-    app.options('/api/admin/products', cors(corsOptions)); 
-    app.options('/api/admin/products/:id', cors(corsOptions)); 
-    console.log(`CORS configured to allow origin: ${FRONTEND_URL}`);
+    // Explicitly handle preflight requests for all routes using these options
+    app.options('*', cors(corsOptions)); 
 }
 
 app.use(express.json());
@@ -85,7 +96,7 @@ app.use('/api/admin/products', adminProductRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {
-  console.log("GET request to /api/test received");
+  console.log("GET request to /api/test received from origin:", req.headers.origin);
   const dbState = mongoose.connection.readyState;
   let dbStatus = 'Disconnected';
   if (dbState === 1) dbStatus = 'Connected';
