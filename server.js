@@ -44,8 +44,10 @@ if (ADMIN_FRONTEND_URL) {
     console.warn("ADMIN_FRONTEND_URL is not set.");
 }
 // For local development, you might uncomment and add:
-// allowedOrigins.push('http://127.0.0.1:5500'); // Example for Live Server admin.html
-// allowedOrigins.push('http://localhost:YOUR_CUSTOMER_FRONTEND_LOCAL_PORT'); 
+// if (process.env.NODE_ENV !== 'production') {
+//    allowedOrigins.push('http://127.0.0.1:5500'); // Example for Live Server admin.html
+//    allowedOrigins.push('http://localhost:YOUR_CUSTOMER_FRONTEND_LOCAL_PORT'); 
+// }
 
 console.log("Final allowedOrigins list:", allowedOrigins);
 console.log("--------------------------------------------------");
@@ -75,6 +77,7 @@ const corsOptions = {
     // Log every CORS check attempt
     console.log(`CORS Middleware: Request from origin: ${origin}. Allowed list: [${allowedOrigins.join(', ')}]`);
     // Allow requests with no origin (like mobile apps or curl requests) OR if origin is in whitelist
+    // OR if allowedOrigins is empty (fallback for misconfiguration, less secure)
     if (!origin || allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.length === 0) { 
       console.log(`CORS Middleware: Origin ${origin} ALLOWED.`);
       callback(null, true);
