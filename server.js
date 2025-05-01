@@ -8,7 +8,7 @@ const app = express();
 const orderRoutes = require('./routes/orderRoutes'); 
 const inquiryRoutes = require('./routes/inquiryRoutes'); 
 const adminProductRoutes = require('./routes/adminProductRoutes'); 
-const publicProductRoutes = require('./routes/publicProductRoutes'); // Import public product routes
+const publicProductRoutes = require('./routes/publicProductRoutes'); // For customer-facing product listings
 
 const port = process.env.PORT || 3001; 
 const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER; 
@@ -43,6 +43,9 @@ if (ADMIN_FRONTEND_URL) {
 } else {
     console.warn("ADMIN_FRONTEND_URL is not set.");
 }
+// For local development, you might uncomment and add:
+// allowedOrigins.push('http://127.0.0.1:5500'); // Example for Live Server admin.html
+// allowedOrigins.push('http://localhost:YOUR_CUSTOMER_FRONTEND_LOCAL_PORT'); 
 
 console.log("Final allowedOrigins list:", allowedOrigins);
 console.log("--------------------------------------------------");
@@ -69,12 +72,14 @@ if (!process.env.MONGODB_URI) {
 // --- Configure CORS ---
 const corsOptions = {
   origin: function (origin, callback) {
+    // Log every CORS check attempt
     console.log(`CORS Middleware: Request from origin: ${origin}. Allowed list: [${allowedOrigins.join(', ')}]`);
+    // Allow requests with no origin (like mobile apps or curl requests) OR if origin is in whitelist
     if (!origin || allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.length === 0) { 
       console.log(`CORS Middleware: Origin ${origin} ALLOWED.`);
       callback(null, true);
     } else {
-      console.error(`CORS Middleware: Origin ${origin} DENIED.`);
+      console.error(`CORS Middleware: Origin ${origin} DENIED. Not in allowed list: ${allowedOrigins.join(', ')}`);
       callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'));
     }
   },
@@ -84,7 +89,9 @@ const corsOptions = {
   optionsSuccessStatus: 200 
 };
 
+// Apply CORS middleware to all routes. This should handle preflight OPTIONS requests.
 app.use(cors(corsOptions));
+// Explicitly handle preflight requests for all routes as a fallback.
 app.options('*', cors(corsOptions)); 
 
 
@@ -101,7 +108,7 @@ if (SENDER_EMAIL_USER && SENDER_EMAIL_PASS) {
 app.use('/api/orders', orderRoutes);       
 app.use('/api/inquiry', inquiryRoutes);    
 app.use('/api/admin/products', adminProductRoutes); 
-app.use('/api/products', publicProductRoutes); // <-- MOUNTED PUBLIC PRODUCT ROUTES
+app.use('/api/products', publicProductRoutes); // Mount public product routes
 
 // Test route
 app.get('/api/test', (req, res) => {
