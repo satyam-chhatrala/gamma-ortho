@@ -7,23 +7,27 @@ const Product = require('../models/Product');
 const { uploadFileToGCS, isGCSInitialized } = require('../services/imageUploadService'); 
 
 // --- Multer Configuration ---
+// Store files in memory as buffers, good for passing to GCS/Cloudinary directly
 const storage = multer.memoryStorage(); 
 const upload = multer({ 
     storage: storage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit per file
     fileFilter: function (req, file, cb) {
+        // Accept images only
         if (!file.mimetype.startsWith('image/')) {
             req.fileValidationError = 'Only image files are allowed!';
+            // To reject this file pass `false`, like so:
             return cb(null, false);
         }
+        // To accept the file pass `true`, like so:
         cb(null, true);
     }
 });
 
 // POST /api/admin/products - Create a new product
 router.post('/', upload.fields([
-    { name: 'baseImage', maxCount: 1 },
-    { name: 'additionalImages', maxCount: 5 }  
+    { name: 'baseImage', maxCount: 1 },         // Matches the 'name' attribute in your admin.html form
+    { name: 'additionalImages', maxCount: 5 }  // Matches the 'name' attribute in your admin.html form
 ]), async (req, res) => {
     console.log("Admin Products: Received POST request to create product");
     console.log("Admin Products: req.body received:", JSON.stringify(req.body, null, 2)); 
@@ -55,7 +59,7 @@ router.post('/', upload.fields([
         }
         
         let parsedDimensions = [];
-        console.log("Admin Products: Attempting to parse dimensions from req.body.dimensions");
+        console.log("Admin Products: Starting dimension parsing loop...");
         if (req.body.dimensions && Array.isArray(req.body.dimensions)) {
             req.body.dimensions.forEach((dim, index) => {
                 console.log(`Admin Products: Processing dimension index ${index} from array:`, dim);
@@ -174,7 +178,7 @@ router.put('/:id', upload.fields([
     { name: 'additionalImages', maxCount: 5 }
 ]), async (req, res) => {
     console.log(`Admin Products: Received PUT request to update product ID: ${req.params.id}`);
-    console.log("Admin Products: Update req.body:", JSON.stringify(req.body, null, 2));
+    console.log("Admin Products: Update req.body:", JSON.stringify(req.body, null, 2)); // Log the received body
 
     if (req.fileValidationError) {
         return res.status(400).json({ message: req.fileValidationError });
@@ -186,11 +190,31 @@ router.put('/:id', upload.fields([
     }
 
     try {
-        const updateData = { ...req.body }; 
-        // We will construct updateData.dimensions only if valid new dimension data is provided.
-        // If not, the existing dimensions in the DB will not be touched by $set unless explicitly set to an empty array.
-        delete updateData.dimensions; 
+        const updateData = {}; // Initialize an empty object for updates
 
+        // Populate updateData with fields from req.body if they exist
+        if (req.body.name !== undefined) updateData.name = req.body.name;
+        if (req.body.description !== undefined) updateData.description = req.body.description;
+        
+        // Handle productType update
+        if (req.body.productTypeSelect) { 
+            if (req.body.productTypeSelect.trim().toLowerCase() === 'other') {
+                updateData.productType = req.body.newProductType ? req.body.newProductType.trim().toLowerCase().replace(/\s+/g, '-') : '';
+                if (!updateData.productType) { // If newProductType is also empty
+                    return res.status(400).json({ message: 'New product type cannot be empty if "Other" is selected for update.' });
+                }
+            } else {
+                updateData.productType = req.body.productTypeSelect.trim().toLowerCase();
+            }
+        }
+        
+        if (req.body.gstRate !== undefined) updateData.gstRate = parseFloat(req.body.gstRate);
+        if (req.body.isActive !== undefined) {
+            updateData.isActive = String(req.body.isActive).toLowerCase() === 'true' || req.body.isActive === true;
+        }
+
+
+        // Parse dimensions if they are sent in the update
         if (req.body.dimensions && Array.isArray(req.body.dimensions)) {
             console.log("Admin Products: Parsing dimensions from req.body.dimensions for PUT request");
             const tempParsedDimensions = req.body.dimensions.map((dim, index) => {
@@ -203,31 +227,32 @@ router.put('/:id', upload.fields([
                 }
                 console.warn(`  Dimension index ${index} in update data SKIPPED due to incomplete/invalid data.`);
                 return null; 
-            }).filter(dim => dim !== null); // Filter out any null entries from invalid pairs
+            }).filter(dim => dim !== null); 
 
             if (req.body.dimensions.length > 0 && tempParsedDimensions.length === 0) {
-                // If dimensions array was sent but all items in it were invalid
                 return res.status(400).json({ message: 'Provided dimensions array was empty or contained only invalid data.' });
             }
             if (tempParsedDimensions.length > 0) {
-                 updateData.dimensions = tempParsedDimensions; // Only assign if we have valid parsed dimensions
+                 updateData.dimensions = tempParsedDimensions; 
             }
             console.log("Admin Products: Parsed dimensions for update:", updateData.dimensions);
         }
-        // If req.body.dimensions is not provided or not an array, updateData.dimensions remains undefined,
-        // so $set will not attempt to modify the dimensions field in the database.
 
-        
+
+        // Handle Base Image Update
         if (req.files && req.files.baseImage && req.files.baseImage[0]) {
             console.log("Updating base image in GCS...");
             const baseImageResultUrl = await uploadFileToGCS(req.files.baseImage[0].buffer, req.files.baseImage[0].originalname, "gamma_ortho_products/base_images/");
             updateData.baseImageURL = baseImageResultUrl;
             console.log("Base image updated:", updateData.baseImageURL);
-        } else if (req.body.hasOwnProperty('baseImageURL') && (req.body.baseImageURL === '' || req.body.baseImageURL === null || req.body.baseImageURL === "null")) { 
+        } else if (req.body.baseImageURL !== undefined && (req.body.baseImageURL === '' || req.body.baseImageURL === null || req.body.baseImageURL === "null")) { 
+            // Check if frontend explicitly wants to remove the image
             updateData.baseImageURL = null; 
+            // TODO: Add logic here to delete the old image from GCS if product.baseImageURL existed
         }
 
 
+        // Handle Additional Images Update
         if (req.files && req.files.additionalImages && req.files.additionalImages.length > 0) {
             console.log(`Uploading ${req.files.additionalImages.length} new additional images to GCS...`);
             const uploadPromises = req.files.additionalImages.map(file => 
@@ -236,31 +261,19 @@ router.put('/:id', upload.fields([
             const additionalImageResults = await Promise.all(uploadPromises);
             updateData.additionalImageURLs = additionalImageResults; 
             console.log("Additional images updated/added:", updateData.additionalImageURLs);
-        } else if (req.body.additionalImageURLs && Array.isArray(req.body.additionalImageURLs)) {
+        } else if (req.body.additionalImageURLs !== undefined && Array.isArray(req.body.additionalImageURLs)) {
+            // If frontend sends an array of URLs (e.g., to allow removing some by not sending them, or to keep existing ones)
+            // This logic assumes the frontend sends the complete list of URLs to keep.
             updateData.additionalImageURLs = req.body.additionalImageURLs.map(url => String(url).trim()).filter(url => url && url !== 'null');
         } else if (req.body.hasOwnProperty('additionalImageURLs') && (req.body.additionalImageURLs === '' || req.body.additionalImageURLs === null)) {
+            // If frontend explicitly sends empty to clear all additional images
             updateData.additionalImageURLs = [];
+            // TODO: Delete all existing additional images from GCS
         }
         
-        if (req.body.productTypeSelect) { 
-            if (req.body.productTypeSelect.trim().toLowerCase() === 'other') {
-                updateData.productType = req.body.newProductType ? req.body.newProductType.trim().toLowerCase().replace(/\s+/g, '-') : '';
-                if (!updateData.productType) {
-                    return res.status(400).json({ message: 'New product type cannot be empty if "Other" is selected for update.' });
-                }
-            } else {
-                updateData.productType = req.body.productTypeSelect.trim().toLowerCase();
-            }
+        if (Object.keys(updateData).length === 0 && (!req.files || (!req.files.baseImage && !req.files.additionalImages))) {
+            return res.status(400).json({ message: 'No update data provided.' });
         }
-        
-        if (updateData.hasOwnProperty('isActive')) {
-            updateData.isActive = String(updateData.isActive).toLowerCase() === 'true' || updateData.isActive === true;
-        }
-        if (updateData.hasOwnProperty('gstRate')) {
-            updateData.gstRate = parseFloat(updateData.gstRate);
-        }
-
-        if (updateData.name !== undefined && updateData.name.trim() === "") delete updateData.name; 
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id, 
