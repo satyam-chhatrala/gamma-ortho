@@ -52,7 +52,7 @@
         .file-input::file-selector-button:hover {
             background-color: #4b5563; /* gray-600 */
         }
-        .payment-input::placeholder, .payment-select option, .dimension-select option, .category-select option, .country-code-select option {
+        .payment-input::placeholder, .payment-select option, .dimension-select option, .category-select option, .country-code-select option { /* Retained for other inputs if needed */
             color: #9ca3af; /* gray-400 */
         }
         .order-item-action-button {
@@ -70,25 +70,6 @@
             flex-grow: 1; 
             padding-left: 1rem; /* px-4 equivalent */
             padding-right: 1rem; /* px-4 equivalent */
-        }
-        .payment-option-card {
-            background-color: #1f2937; /* gray-800 */
-            padding: 1.5rem; /* p-6 */
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); /* shadow-lg */
-        }
-        .payment-button {
-            background-color: #0ea5e9; /* sky-500 */
-            color: white;
-            font-weight: 600; /* font-semibold */
-            padding: 0.75rem 1.5rem; /* px-6 py-3 */
-            border-radius: 0.5rem; /* rounded-lg */
-            transition: background-color 0.3s;
-            width: 100%;
-            margin-top: 1rem; /* mt-4 */
-        }
-        .payment-button:hover {
-            background-color: #0284c7; /* sky-600 */
         }
         .product-price-display { 
             font-weight: bold;
@@ -183,7 +164,6 @@
                 <a href="#home" class="nav-link text-gray-300 hover:text-sky-400 px-3 py-2 rounded-md nav-link-active">Home</a>
                 <a href="#products" class="nav-link text-gray-300 hover:text-sky-400 px-3 py-2 rounded-md">Products</a>
                 <a href="#order-review" class="nav-link text-gray-300 hover:text-sky-400 px-3 py-2 rounded-md">Review Order</a>
-                <a href="#payments" class="nav-link text-gray-300 hover:text-sky-400 px-3 py-2 rounded-md">Payments</a>
                 <a href="#about" class="nav-link text-gray-300 hover:text-sky-400 px-3 py-2 rounded-md">About Us</a>
                 <a href="#contact" class="nav-link text-gray-300 hover:text-sky-400 px-3 py-2 rounded-md">Contact</a>
             </div>
@@ -197,7 +177,6 @@
             <a href="#home" class="block nav-link text-gray-300 hover:text-sky-400 px-6 py-3 nav-link-active">Home</a>
             <a href="#products" class="block nav-link text-gray-300 hover:text-sky-400 px-6 py-3">Products</a>
             <a href="#order-review" class="block nav-link text-gray-300 hover:text-sky-400 px-6 py-3">Review Order</a>
-            <a href="#payments" class="block nav-link text-gray-300 hover:text-sky-400 px-6 py-3">Payments</a>
             <a href="#about" class="block nav-link text-gray-300 hover:text-sky-400 px-6 py-3">About Us</a>
             <a href="#contact" class="block nav-link text-gray-300 hover:text-sky-400 px-6 py-3">Contact</a>
         </div>
@@ -262,7 +241,6 @@
                          <button id="clear-order-btn" class="bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-yellow-700 transition duration-300 text-sm">Clear Order</button>
                     </div>
 
-
                     <h3 class="text-xl font-semibold text-gray-100 mb-4 mt-8">Your Details:</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
@@ -316,58 +294,12 @@
                         <input type="text" id="customer-pincode" class="input-base-style" placeholder="e.g., 123456" required>
                     </div>
 
-
                     <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-3 mt-8">
                         <button id="clear-details-btn" class="w-full sm:w-auto bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg shadow-md hover:bg-orange-700 transition duration-300">Clear Details</button>
                         <button id="place-order-btn" class="w-full sm:w-auto bg-green-600 text-white font-semibold px-4 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-300 flex-grow">Place Order</button>
                     </div>
                      <p id="order-feedback" class="text-center text-sm mt-4"></p>
                 </div>
-            </div>
-        </section>
-
-        <section id="payments" class="py-16 md:py-24 bg-black">
-            <div class="container mx-auto px-6">
-                <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-100 mb-12">Payment Options</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <div class="payment-option-card">
-                        <h3 class="text-xl font-semibold text-sky-400 mb-4"><i class="fas fa-qrcode mr-2"></i>Pay via UPI</h3>
-                        <p class="text-gray-300 mb-3">Enter your UPI ID or scan a QR code (Illustrative).</p>
-                        <input type="text" id="upi-id" class="payment-input mb-3" placeholder="yourname@upi">
-                        <img src="https://placehold.co/150x150/374151/9ca3af?text=Scan+QR" alt="UPI QR Code Placeholder" class="mx-auto my-3 rounded-md">
-                        <button class="payment-btn payment-button" data-method="UPI">Proceed with UPI</button>
-                    </div>
-                    <div class="payment-option-card">
-                        <h3 class="text-xl font-semibold text-sky-400 mb-4"><i class="fas fa-credit-card mr-2"></i>Pay via Card</h3>
-                        <div class="space-y-3">
-                            <input type="text" id="card-number" class="payment-input" placeholder="Card Number (e.g., 1234-5678-9012-3456)">
-                            <div class="flex space-x-3">
-                                <input type="text" id="card-expiry" class="payment-input" placeholder="MM/YY">
-                                <input type="text" id="card-cvv" class="payment-input" placeholder="CVV">
-                            </div>
-                        </div>
-                        <button class="payment-btn payment-button" data-method="Card">Pay with Card</button>
-                    </div>
-                    <div class="payment-option-card">
-                        <h3 class="text-xl font-semibold text-sky-400 mb-4"><i class="fas fa-university mr-2"></i>Pay via Net Banking</h3>
-                        <p class="text-gray-300 mb-3">Select your bank from the list below (Illustrative).</p>
-                        <select id="netbanking-bank" class="payment-select mb-3">
-                            <option value="">-- Select Bank --</option>
-                            <option value="HDFC">HDFC Bank</option>
-                            <option value="ICICI">ICICI Bank</option>
-                            <option value="SBI">State Bank of India</option>
-                            <option value="AXIS">Axis Bank</option>
-                            <option value="KOTAK">Kotak Mahindra Bank</option>
-                        </select>
-                        <button class="payment-btn payment-button" data-method="Net Banking">Proceed with Net Banking</button>
-                    </div>
-                    <div class="payment-option-card">
-                        <h3 class="text-xl font-semibold text-sky-400 mb-4"><i class="fas fa-clock mr-2"></i>Pay Later</h3>
-                        <p class="text-gray-300 mb-3">Opt to complete your payment later. We will contact you with further details.</p>
-                        <button class="payment-btn payment-button" data-method="Pay Later">Choose Pay Later</button>
-                    </div>
-                </div>
-                <p id="payment-feedback" class="text-center text-sm mt-8"></p>
             </div>
         </section>
 
@@ -458,14 +390,20 @@
     </footer>
 
     <script>
+        // Global constants for GST rate and backend API URL
         const GST_RATE = 0.12; 
         const BACKEND_URL = 'https://gamma-ortho.onrender.com'; 
 
+        // Global array to store all products fetched from the backend
         let allFetchedProducts = []; 
+        // Global array to store items currently in the customer's order
+        let currentOrder = []; 
 
+        // Predefined country codes for phone number input
         const countryCodes = [ { name: "IND", code: "+91" }, { name: "USA", code: "+1" }, { name: "UK", code: "+44" }];
+        // Location data for populating country, state, and city dropdowns
         const locationData = {
-            "India": {
+            "India": { /* States and cities for India */
                 "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool"],
                 "Arunachal Pradesh": ["Itanagar", "Naharlagun", "Pasighat"],
                 "Assam": ["Guwahati", "Dibrugarh", "Silchar", "Jorhat"],
@@ -503,27 +441,66 @@
                 "Ladakh": ["Leh", "Kargil"],
                 "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Udhampur"]
             },
-            "USA": { 
+            "USA": { /* States and cities for USA */
                 "California": ["Los Angeles", "San Francisco", "San Diego", "Sacramento", "Oakland", "Fresno", "Long Beach"],
                 "New York": ["New York City", "Buffalo", "Rochester", "Albany", "Syracuse", "Yonkers"],
                 "Texas": ["Houston", "Dallas", "Austin", "San Antonio", "Fort Worth", "El Paso"]
             },
-            "UK": { 
+            "UK": { /* Regions and cities for UK */
                 "England": ["London", "Manchester", "Birmingham", "Liverpool", "Bristol", "Leeds", "Sheffield"],
                 "Scotland": ["Edinburgh", "Glasgow", "Aberdeen", "Dundee"],
                 "Wales": ["Cardiff", "Swansea", "Newport"]
             }
         };
 
+        // DOM Element references, fetched once for efficiency
+        const productListContainer = document.getElementById('product-list-container');
+        const productsLoadingMessage = document.getElementById('products-loading-message');
+        const orderItemsContainer = document.getElementById('order-items-container');
+        const orderTotalElement = document.getElementById('order-total');
+        const placeOrderBtn = document.getElementById('place-order-btn');
+        const clearOrderBtn = document.getElementById('clear-order-btn');
+        const orderFeedback = document.getElementById('order-feedback');
+        const clearDetailsBtn = document.getElementById('clear-details-btn');
+        const countrySelect = document.getElementById('customer-country');
+        const stateSelect = document.getElementById('customer-state');
+        const citySelect = document.getElementById('customer-city'); 
+        const productSearchInput = document.getElementById('product-search-input');
+        const productTypeFilters = document.querySelectorAll('.product-type-filter');
+        const filterToggleButton = document.getElementById('filter-toggle-button');
+        const filterOptionsContainer = document.getElementById('product-filter-options-container');
+        const inquiryForm = document.getElementById('inquiry-form');
+        const contactFormFeedback = document.getElementById('contact-form-feedback');
+        const menuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const currentYearEl = document.getElementById('currentYear');
+        const customerNameInput = document.getElementById('customer-name');
+        const customerEmailInput = document.getElementById('customer-email');
+        const customerMobileCodeInput = document.getElementById('customer-mobile-code');
+        const customerMobileInput = document.getElementById('customer-mobile');
+        const customerWhatsappCodeInput = document.getElementById('customer-whatsapp-code');
+        const customerWhatsappInput = document.getElementById('customer-whatsapp');
+        const customerAddressInput = document.getElementById('customer-address');
+        const customerPincodeInput = document.getElementById('customer-pincode');
+
+
+        /**
+         * Populates the dimension dropdown and initial price for a product card.
+         * @param {HTMLElement} cardElement - The product card's root DOM element.
+         * @param {Array} dimensions - Array of dimension objects for the product.
+         * @param {string} productId - The unique ID of the product.
+         */
         function populateDimensionDropdownsOnCard(cardElement, dimensions, productId) {
             const selectElement = cardElement.querySelector(`#dim-${productId}`);
             const priceDisplayElement = cardElement.querySelector(`#price-display-${productId}`);
-            const gstRateTextElements = cardElement.querySelectorAll('.gst-rate-text');
+            const gstRateTextElements = cardElement.querySelectorAll('.gst-rate-text'); 
 
             if (!selectElement || !priceDisplayElement) {
-                console.warn(`Missing select or price display for product ${productId}`);
+                console.warn(`Missing select or price display for product ${productId} on card.`);
+                if(priceDisplayElement) priceDisplayElement.textContent = "N/A";
                 return;
             }
+
             if (!dimensions || dimensions.length === 0) {
                 selectElement.innerHTML = '<option value="">N/A</option>';
                 selectElement.disabled = true;
@@ -532,15 +509,18 @@
                 return;
             }
             
-            selectElement.disabled = false;
-            gstRateTextElements.forEach(el => el.textContent = (GST_RATE * 100).toFixed(0));
+            selectElement.disabled = false; 
+            const productData = allFetchedProducts.find(p => p._id === productId);
+            const currentProductGst = (productData && typeof productData.gstRate === 'number') ? productData.gstRate : GST_RATE;
+            gstRateTextElements.forEach(el => el.textContent = (currentProductGst * 100).toFixed(0));
+            
             selectElement.innerHTML = ''; 
 
             dimensions.forEach((dim, index) => {
                 const option = document.createElement('option');
                 option.value = dim.dimensionName;
                 option.textContent = dim.dimensionName;
-                option.dataset.basePrice = dim.basePrice;
+                option.dataset.basePrice = dim.basePrice; 
                 selectElement.appendChild(option);
 
                 if (index === 0) {
@@ -555,15 +535,17 @@
             });
         }
         
-        const productListContainer = document.getElementById('product-list-container');
-        const productsLoadingMessage = document.getElementById('products-loading-message');
-
+        /**
+         * Renders product cards into the product list container.
+         * @param {Array} productsToRender - Array of product objects to display.
+         */
         function renderProducts(productsToRender) {
             if (!productListContainer) {
-                console.error("Product list container not found!");
+                console.error("Product list container not found for rendering products!");
                 return;
             }
             productListContainer.innerHTML = ''; 
+            
             if (!productsToRender || productsToRender.length === 0) {
                 productListContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">No products found matching your criteria.</p>';
                 return;
@@ -574,7 +556,7 @@
                 card.className = 'product-card bg-gray-800 rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300';
                 card.dataset.productId = product._id; 
                 card.dataset.productName = product.name.toLowerCase(); 
-                card.dataset.productType = product.productType.toLowerCase(); 
+                card.dataset.productType = product.productType ? product.productType.toLowerCase() : 'unknown'; 
 
                 let initialBasePrice = "N/A";
                 if (product.dimensions && product.dimensions.length > 0 && product.dimensions[0].basePrice !== undefined) {
@@ -582,12 +564,13 @@
                 }
                 
                 const placeholderImage = `https://placehold.co/600x400/4A5568/E2E8F0?text=${encodeURIComponent(product.name)}`;
+                const displayGstRate = (typeof product.gstRate === 'number' ? product.gstRate : GST_RATE) * 100;
 
                 card.innerHTML = `
                     <img src="${product.baseImageURL || placeholderImage}" alt="${product.name}" class="product-card-image" onerror="this.onerror=null; this.src='${placeholderImage}';">
                     <div class="p-6">
                         <h3 class="text-xl font-semibold text-gray-100 mb-2 product-name">${product.name}</h3>
-                        <p class="product-price-display">Price: <span id="price-display-${product._id}">${initialBasePrice}</span> Rs + <span class="gst-rate-text">${(GST_RATE * 100).toFixed(0)}</span>% GST</p>
+                        <p class="product-price-display">Price: <span id="price-display-${product._id}">${initialBasePrice}</span> Rs + <span class="gst-rate-text">${displayGstRate.toFixed(0)}</span>% GST</p>
                         <div class="mb-3">
                             <label for="dim-${product._id}" class="block text-sm font-medium text-gray-300 mb-1">Select Dimension:</label>
                             <select id="dim-${product._id}" class="dimension-select"></select>
@@ -602,75 +585,86 @@
                 productListContainer.appendChild(card);
                 populateDimensionDropdownsOnCard(card, product.dimensions, product._id); 
 
-                card.querySelector('.add-to-order-btn').addEventListener('click', () => {
-                    console.log('Add to cart clicked for product:', product.name, product._id); 
+                const addToOrderButton = card.querySelector('.add-to-order-btn');
+                if (addToOrderButton) {
+                    addToOrderButton.addEventListener('click', () => {
+                        console.log('Add to cart clicked for product:', product.name, product._id); 
 
-                    const quantityInput = card.querySelector(`#qty-${product._id}`);
-                    const dimensionSelect = card.querySelector(`#dim-${product._id}`);
-                    const quantity = parseInt(quantityInput.value);
-                    const selectedDimensionName = dimensionSelect.value;
-                    
-                    console.log('Selected dimension name:', selectedDimensionName, 'Quantity:', quantity); 
+                        const quantityInput = card.querySelector(`#qty-${product._id}`);
+                        const dimensionSelect = card.querySelector(`#dim-${product._id}`);
+                        const quantity = parseInt(quantityInput.value);
+                        const selectedDimensionName = dimensionSelect.value;
+                        
+                        console.log('Selected dimension name:', selectedDimensionName, 'Quantity:', quantity); 
 
-                    if (!selectedDimensionName) {
-                        if(orderFeedback) orderFeedback.textContent = 'Please select a dimension for the product.';
-                        if(orderFeedback) orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
-                        setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
-                        return;
-                    }
-
-                    const fullProductData = allFetchedProducts.find(p => p._id === product._id);
-                    if (!fullProductData || !fullProductData.dimensions) {
-                        console.error("Could not find full product data or dimensions for ID:", product._id, "Full data:", fullProductData);
-                        if(orderFeedback) orderFeedback.textContent = 'Error finding product details. Please refresh.';
-                        if(orderFeedback) orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
-                        setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
-                        return;
-                    }
-
-                    const selectedDimensionData = fullProductData.dimensions.find(d => d.dimensionName === selectedDimensionName);
-                    console.log('Found dimension data:', selectedDimensionData); 
-                    console.log('Product GST rate from fullProductData:', fullProductData.gstRate); 
-
-
-                    if (quantity > 0 && selectedDimensionData && typeof fullProductData.gstRate === 'number') { 
-                        addItemToOrder(product._id, product.name, selectedDimensionName, quantity, selectedDimensionData.basePrice, fullProductData.gstRate);
-                        quantityInput.value = '1'; 
-                    } else {
-                        let errorMsg = 'Please enter a valid quantity.';
-                        if (!selectedDimensionData) {
-                            errorMsg = 'Could not find data for the selected dimension.';
-                        } else if (typeof fullProductData.gstRate !== 'number') {
-                            errorMsg = 'Product GST rate is missing or invalid.';
+                        if (!selectedDimensionName) {
+                            if(orderFeedback) {
+                                orderFeedback.textContent = 'Please select a dimension for the product.';
+                                orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                                setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
+                            }
+                            return;
                         }
-                        if(orderFeedback) orderFeedback.textContent = errorMsg;
-                        if(orderFeedback) orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
-                        console.error("Add to cart error:", errorMsg, "Selected Dim Data:", selectedDimensionData, "GST Rate:", fullProductData.gstRate);
-                        setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
-                    }
-                });
+
+                        const fullProductData = allFetchedProducts.find(p => p._id === product._id);
+                        if (!fullProductData || !fullProductData.dimensions) {
+                            console.error("Could not find full product data or dimensions for ID:", product._id, "Full data:", fullProductData);
+                            if(orderFeedback) {
+                                orderFeedback.textContent = 'Error finding product details. Please refresh.';
+                                orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                                setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
+                            }
+                            return;
+                        }
+
+                        const selectedDimensionData = fullProductData.dimensions.find(d => d.dimensionName === selectedDimensionName);
+                        console.log('Found dimension data:', selectedDimensionData); 
+                        
+                        const productGstRate = (typeof fullProductData.gstRate === 'number') ? fullProductData.gstRate : GST_RATE;
+                        console.log('Product GST rate to be used for order item:', productGstRate); 
+
+                        if (quantity > 0 && selectedDimensionData) { 
+                            addItemToOrder(product._id, product.name, selectedDimensionName, quantity, selectedDimensionData.basePrice, productGstRate);
+                            if(quantityInput) quantityInput.value = '1'; 
+                        } else {
+                            let errorMsg = 'Please enter a valid quantity.';
+                            if (!selectedDimensionData) {
+                                errorMsg = 'Could not find data for the selected dimension.';
+                            }
+                            if(orderFeedback) {
+                                orderFeedback.textContent = errorMsg;
+                                orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                            }
+                            console.error("Add to cart error:", errorMsg, "Selected Dim Data:", selectedDimensionData, "GST Rate:", productGstRate);
+                            setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
+                        }
+                    });
+                }
             });
         }
 
+        /**
+         * Fetches products from the backend API and triggers rendering.
+         */
         async function fetchAndDisplayCustomerProducts() {
             if (productsLoadingMessage) productsLoadingMessage.classList.remove('hidden');
             try {
                 console.log(`Fetching products from: ${BACKEND_URL}/api/products`);
                 const response = await fetch(`${BACKEND_URL}/api/products`);
                 console.log(`Response status from /api/products: ${response.status}`);
-                if (!response.ok) {
+                if (!response.ok) { 
                     let errorText = `HTTP error! status: ${response.status}`;
                     try {
-                        const errorResult = await response.json();
+                        const errorResult = await response.json(); 
                         errorText = errorResult.message || errorText;
                         console.error("Error fetching products (JSON):", errorResult);
                     } catch (e) { 
-                        errorText = await response.text();
+                        errorText = await response.text(); 
                         console.error("Error fetching products (text):", errorText);
                     }
                     throw new Error(errorText);
                 }
-                allFetchedProducts = await response.json();
+                allFetchedProducts = await response.json(); 
                 console.log("Fetched products:", allFetchedProducts);
                 if (productsLoadingMessage) productsLoadingMessage.classList.add('hidden');
                 applyFiltersAndSearch(); 
@@ -681,29 +675,117 @@
             }
         }
 
-        function populateCountryCodeDropdowns() { /* ... (as before, check for null elements) ... */ }
-        const countrySelect = document.getElementById('customer-country');
-        const stateSelect = document.getElementById('customer-state');
-        const citySelect = document.getElementById('customer-city'); 
-        function populateCountries() { /* ... (as before, check for null elements) ... */ }
-        function populateStates(country) { /* ... (as before, check for null elements) ... */ }
-        function populateCities(country, state) { /* ... (as before, check for null elements) ... */ }
+        /**
+         * Populates country code dropdowns for mobile and WhatsApp numbers.
+         */
+        function populateCountryCodeDropdowns() { 
+            const mobileCodeSelect = document.getElementById('customer-mobile-code');
+            const whatsappCodeSelect = document.getElementById('customer-whatsapp-code');
+            
+            if(mobileCodeSelect) {
+                countryCodes.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.code;
+                    option.textContent = `${country.name} (${country.code})`;
+                    if (country.name === "IND") option.selected = true; 
+                    mobileCodeSelect.appendChild(option);
+                });
+            }
+            if(whatsappCodeSelect) {
+                 countryCodes.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country.code;
+                    option.textContent = `${country.name} (${country.code})`;
+                     if (country.name === "IND") option.selected = true; 
+                    whatsappCodeSelect.appendChild(option.cloneNode(true)); 
+                });
+            }
+        }
+        
+        /**
+         * Populates the country dropdown in the customer details form.
+         */
+        function populateCountries() { 
+            if (!countrySelect) return;
+            countrySelect.innerHTML = '<option value="">-- Select Country --</option>';
+            for (const country in locationData) {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            }
+            if (locationData.hasOwnProperty("India")) {
+                countrySelect.value = "India";
+                populateStates("India"); 
+            }
+        }
+
+        /**
+         * Populates the state dropdown based on the selected country.
+         * @param {string} country - The selected country name.
+         */
+        function populateStates(country) { 
+            if (!stateSelect || !citySelect || !locationData[country]) {
+                if(stateSelect) {
+                    stateSelect.innerHTML = '<option value="">-- Select State --</option>';
+                    stateSelect.disabled = true;
+                }
+                if(citySelect) {
+                    citySelect.innerHTML = '<option value="">-- Select City --</option>';
+                    citySelect.disabled = true;
+                }
+                return;
+            }
+            stateSelect.innerHTML = '<option value="">-- Select State --</option>';
+            stateSelect.disabled = false;
+            citySelect.innerHTML = '<option value="">-- Select City --</option>';
+            citySelect.disabled = true; 
+
+            for (const state in locationData[country]) {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            }
+        }
+
+        /**
+         * Populates the city dropdown based on the selected country and state.
+         * @param {string} country - The selected country name.
+         * @param {string} state - The selected state name.
+         */
+        function populateCities(country, state) { 
+            if (!citySelect || !locationData[country] || !locationData[country][state]) {
+                 if(citySelect) {
+                    citySelect.innerHTML = '<option value="">-- Select City --</option>';
+                    citySelect.disabled = true;
+                }
+                return;
+            }
+            citySelect.innerHTML = '<option value="">-- Select City --</option>';
+            citySelect.disabled = false;
+            locationData[country][state].forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+        }
+        
         if (countrySelect) countrySelect.addEventListener('change', function() { populateStates(this.value); });
         if (stateSelect) stateSelect.addEventListener('change', function() { if (countrySelect) { populateCities(countrySelect.value, this.value); }});
 
-        const productSearchInput = document.getElementById('product-search-input');
-        const productTypeFilters = document.querySelectorAll('.product-type-filter');
-        const filterToggleButton = document.getElementById('filter-toggle-button');
-        const filterOptionsContainer = document.getElementById('product-filter-options-container');
-
-        if(filterToggleButton) {
+        if(filterToggleButton && filterOptionsContainer) {
             filterToggleButton.addEventListener('click', () => {
-                if(filterOptionsContainer) filterOptionsContainer.classList.toggle('hidden');
+                filterOptionsContainer.classList.toggle('hidden');
             });
         }
 
+        /**
+         * Applies search term and product type filters to the product list.
+         */
         function applyFiltersAndSearch() {
-            let filteredProducts = allFetchedProducts; 
+            let filteredProducts = [...allFetchedProducts]; 
             const searchTerm = productSearchInput ? productSearchInput.value.toLowerCase().trim() : "";
             
             const selectedTypes = [];
@@ -715,7 +797,7 @@
 
             productTypeFilters.forEach(checkbox => {
                 if (checkbox.checked && checkbox.value !== 'all') {
-                    selectedTypes.push(checkbox.value);
+                    selectedTypes.push(checkbox.value.toLowerCase()); 
                 }
             });
 
@@ -732,10 +814,11 @@
                     product.name && product.name.toLowerCase().includes(searchTerm)
                 );
             }
-            renderProducts(filteredProducts);
+            renderProducts(filteredProducts); 
         }
 
         if(productSearchInput) productSearchInput.addEventListener('input', applyFiltersAndSearch);
+        
         productTypeFilters.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
                 if (checkbox.value === 'all' && checkbox.checked) {
@@ -750,13 +833,17 @@
             });
         });
         
+        /**
+         * Renders the current order summary in the "Review Order" section.
+         */
         function renderOrderSummary() {
             console.log("renderOrderSummary called. currentOrder:", JSON.parse(JSON.stringify(currentOrder))); 
             if (!orderItemsContainer || !orderTotalElement || !placeOrderBtn || !clearOrderBtn) {
                 console.error("One or more order summary DOM elements not found for renderOrderSummary!");
                 return;
             }
-            orderItemsContainer.innerHTML = '';
+            orderItemsContainer.innerHTML = ''; 
+            
             if (currentOrder.length === 0) {
                 orderItemsContainer.innerHTML = '<p class="text-gray-400 text-center">Your order is currently empty.</p>';
                 orderTotalElement.textContent = '0.00 Rs';
@@ -772,7 +859,7 @@
             clearOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             
             let grandTotal = 0;
-            const mainUl = document.createElement('ul');
+            const mainUl = document.createElement('ul'); 
             mainUl.className = 'space-y-3'; 
 
             currentOrder.forEach(productGroup => {
@@ -784,7 +871,7 @@
                 productNameHeader.textContent = productGroup.baseProductName;
                 productLi.appendChild(productNameHeader);
 
-                const variantsUl = document.createElement('ul');
+                const variantsUl = document.createElement('ul'); 
                 variantsUl.className = 'space-y-2 pl-1'; 
 
                 productGroup.variants.forEach(variant => {
@@ -793,8 +880,8 @@
                     
                     const baseSubtotalForVariant = variant.basePrice * variant.quantity;
                     const gstForVariantSubtotal = baseSubtotalForVariant * variant.gstRate;
-                    const variantTotalWithGst = variant.priceIncGst * variant.quantity;
-                    grandTotal += variantTotalWithGst;
+                    const variantTotalWithGst = variant.priceIncGst * variant.quantity; 
+                    grandTotal += variantTotalWithGst; 
 
                     variantLi.innerHTML = `
                         <div>
@@ -818,19 +905,21 @@
             });
 
             orderItemsContainer.appendChild(mainUl);
-            orderTotalElement.textContent = `${grandTotal.toFixed(2)} Rs`;
+            orderTotalElement.textContent = `${grandTotal.toFixed(2)} Rs`; 
             console.log("Order summary rendered. Grand total:", grandTotal.toFixed(2)); 
         }
 
+        /**
+         * Adds an item (product variant) to the current order.
+         */
         function addItemToOrder(baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate) { 
             console.log('addItemToOrder called with:', {baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate}); 
-            console.log("currentOrder BEFORE add:", JSON.parse(JSON.stringify(currentOrder))); 
             
             const effectiveGstRate = (typeof gstRate === 'number' && !isNaN(gstRate)) ? gstRate : GST_RATE;
-            console.log('Effective GST Rate used:', effectiveGstRate);
+            console.log('Effective GST Rate used for this item:', effectiveGstRate);
 
-            const priceIncGst = basePrice * (1 + effectiveGstRate);
-            const variantId = `${baseProductId}-${selectedDimensionName.replace(/\s+/g, '-')}`;
+            const priceIncGst = parseFloat(basePrice) * (1 + effectiveGstRate); 
+            const variantId = `${baseProductId}-${selectedDimensionName.replace(/\s+/g, '-')}`; 
 
             let productGroup = currentOrder.find(pg => pg.baseProductId === baseProductId);
 
@@ -843,7 +932,7 @@
                     productGroup.variants.push({ 
                         variantId: variantId,
                         dimension: selectedDimensionName,
-                        basePrice: basePrice,
+                        basePrice: parseFloat(basePrice),
                         gstRate: effectiveGstRate, 
                         priceIncGst: priceIncGst, 
                         quantity: quantity 
@@ -857,7 +946,7 @@
                     variants: [{
                         variantId: variantId,
                         dimension: selectedDimensionName,
-                        basePrice: basePrice,
+                        basePrice: parseFloat(basePrice),
                         gstRate: effectiveGstRate, 
                         priceIncGst: priceIncGst, 
                         quantity: quantity 
@@ -865,19 +954,20 @@
                 });
                 console.log("Added new product group with variant:", baseProductId, variantId); 
             }
-            console.log("currentOrder AFTER add:", JSON.parse(JSON.stringify(currentOrder))); 
-
+            
             if(orderFeedback) {
                 orderFeedback.textContent = `Added ${quantity} x ${baseProductName} (${selectedDimensionName}) to your cart.`;
                 orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
                 setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
             }
-            renderOrderSummary();
+            renderOrderSummary(); 
         }
         
+        /**
+         * Removes an item (product variant) from the current order.
+         */
         function removeItemFromOrder(variantIdToRemove) {
             console.log("removeItemFromOrder called for variantId:", variantIdToRemove); 
-            console.log("currentOrder BEFORE remove:", JSON.parse(JSON.stringify(currentOrder))); 
             let productGroupIndex = -1;
             let variantIndexToRemove = -1;
 
@@ -908,8 +998,7 @@
             } else {
                  console.warn("Could not find item to remove with variantId:", variantIdToRemove); 
             }
-            console.log("currentOrder AFTER remove:", JSON.parse(JSON.stringify(currentOrder))); 
-            renderOrderSummary();
+            renderOrderSummary(); 
         }
 
         if(orderItemsContainer) orderItemsContainer.addEventListener('click', (event) => {
@@ -921,97 +1010,226 @@
             }
         });
 
-        if(placeOrderBtn) placeOrderBtn.addEventListener('click', async () => { /* ... (as before, ensure BACKEND_URL is used) ... */ });
+        if(placeOrderBtn) {
+            placeOrderBtn.addEventListener('click', async () => { 
+                console.log("Place Order button clicked.");
+                if(orderFeedback) orderFeedback.textContent = ''; 
+
+                const customerName = customerNameInput ? customerNameInput.value.trim() : '';
+                const customerEmail = customerEmailInput ? customerEmailInput.value.trim() : '';
+                const customerMobileCode = customerMobileCodeInput ? customerMobileCodeInput.value : '';
+                const customerMobile = customerMobileInput ? customerMobileInput.value.trim() : '';
+                const customerAddress = customerAddressInput ? customerAddressInput.value.trim() : '';
+                const customerCountryVal = countrySelect ? countrySelect.value : '';
+                const customerStateVal = stateSelect ? stateSelect.value : '';
+                const customerCityVal = citySelect ? citySelect.value : '';
+                const customerPincode = customerPincodeInput ? customerPincodeInput.value.trim() : '';
+                const customerWhatsappNum = customerWhatsappInput ? customerWhatsappInput.value.trim() : '';
+                const customerWhatsappCodeVal = customerWhatsappCodeInput ? customerWhatsappCodeInput.value : '';
+
+
+                if (!customerName || !customerEmail || !customerMobile || !customerAddress || !customerCountryVal || !customerStateVal || !customerCityVal || !customerPincode) {
+                    if(orderFeedback) {
+                        orderFeedback.textContent = 'Please fill in all required customer details.';
+                        orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                    }
+                    return;
+                }
+                if (!/^\S+@\S+\.\S+$/.test(customerEmail)) { 
+                     if(orderFeedback) {
+                        orderFeedback.textContent = 'Please enter a valid email address.';
+                        orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                    }
+                    return;
+                }
+
+                const orderData = {
+                    customerDetails: {
+                        name: customerName,
+                        email: customerEmail,
+                        mobile: customerMobileCode + customerMobile,
+                        whatsapp: customerWhatsappCodeVal + customerWhatsappNum,
+                        address: customerAddress,
+                        country: customerCountryVal,
+                        state: customerStateVal,
+                        city: customerCityVal,
+                        pincode: customerPincode,
+                    },
+                    items: currentOrder.flatMap(productGroup => 
+                        productGroup.variants.map(variant => ({
+                            productId: productGroup.baseProductId,
+                            productName: productGroup.baseProductName,
+                            dimension: variant.dimension,
+                            quantity: variant.quantity,
+                            basePrice: variant.basePrice,
+                            gstRate: variant.gstRate,
+                            priceIncGst: variant.priceIncGst 
+                        }))
+                    ),
+                    totalAmount: parseFloat(orderTotalElement.textContent), 
+                    paymentMethod: "Pending" 
+                };
+
+                console.log("Order data to be sent:", JSON.stringify(orderData, null, 2));
+                if(orderFeedback) {
+                    orderFeedback.textContent = 'Placing your order...';
+                    orderFeedback.className = 'text-center text-sm mt-4 text-sky-400';
+                }
+                placeOrderBtn.disabled = true; 
+                placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/orders/place`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(orderData)
+                    });
+                    const result = await response.json();
+                    if (response.ok) { 
+                        if(orderFeedback) {
+                            orderFeedback.textContent = `Order placed successfully! Order ID: ${result.orderId}. We will contact you shortly.`;
+                            orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
+                        }
+                        currentOrder = []; 
+                        renderOrderSummary(); 
+                    } else { 
+                        if(orderFeedback) {
+                            orderFeedback.textContent = result.message || `Error placing order: ${response.status}`;
+                            orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                        }
+                    }
+                } catch (error) { 
+                    console.error('Error placing order:', error);
+                    if(orderFeedback) {
+                        orderFeedback.textContent = 'An unexpected error occurred while placing your order. Please try again.';
+                        orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
+                    }
+                } finally {
+                     if (currentOrder.length > 0 || !placeOrderBtn.disabled) { 
+                        placeOrderBtn.disabled = false;
+                        placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            });
+        }
         
         if(clearOrderBtn) clearOrderBtn.addEventListener('click', () => { 
             console.log("Clear Order button clicked."); 
-            currentOrder = [];
+            currentOrder = []; 
             if(orderFeedback) {
                 orderFeedback.textContent = 'Order cleared.';
                 orderFeedback.className = 'text-center text-sm mt-4 text-red-500';
                 setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
             }
-            renderOrderSummary();
+            renderOrderSummary(); 
         });
 
-        if(clearDetailsBtn) clearDetailsBtn.addEventListener('click', () => { /* ... (as before) ... */ });
+        if(clearDetailsBtn) {
+            clearDetailsBtn.addEventListener('click', () => { 
+                if(customerNameInput) customerNameInput.value = '';
+                if(customerEmailInput) customerEmailInput.value = '';
+                if(customerMobileInput) customerMobileInput.value = '';
+                if(customerWhatsappInput) customerWhatsappInput.value = '';
+                if(customerAddressInput) customerAddressInput.value = '';
+                if(customerPincodeInput) customerPincodeInput.value = '';
+                
+                if(countrySelect) {
+                    countrySelect.value = 'India'; 
+                    populateStates(countrySelect.value); 
+                }
+                if(orderFeedback) {
+                    orderFeedback.textContent = 'Customer details cleared.';
+                    orderFeedback.className = 'text-center text-sm mt-4 text-yellow-500';
+                     setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; }, 3000);
+                }
+            });
+        }
         
-        const paymentButtons = document.querySelectorAll('.payment-btn');
-        const paymentFeedbackEl = document.getElementById('payment-feedback'); 
-        if(paymentButtons.length > 0) { /* ... (as before, using paymentFeedbackEl) ... */ }
-        
-        const inquiryForm = document.getElementById('inquiry-form');
-        const contactFormFeedback = document.getElementById('contact-form-feedback');
-        if(inquiryForm) { /* ... (as before, ensure BACKEND_URL is used) ... */ }
+        if(inquiryForm && contactFormFeedback) { 
+            inquiryForm.addEventListener('submit', async function(e) {
+                e.preventDefault(); 
+                contactFormFeedback.textContent = 'Submitting your inquiry...';
+                contactFormFeedback.className = 'contact-form-feedback text-sky-400';
+                const submitButton = this.querySelector('button[type="submit"]');
+                if(submitButton) submitButton.disabled = true; 
 
-        const menuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
-        if(menuButton) menuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+                const formData = new FormData(this); 
+                
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/inquiry/submit`, {
+                        method: 'POST',
+                        body: formData, 
+                    });
+                    const result = await response.json();
+
+                    if (response.ok) { 
+                        contactFormFeedback.textContent = result.message || "Inquiry submitted successfully!";
+                        contactFormFeedback.className = 'contact-form-feedback text-green-500';
+                        this.reset(); 
+                    } else { 
+                        contactFormFeedback.textContent = result.message || `Error: ${response.statusText || response.status}`;
+                        contactFormFeedback.className = 'contact-form-feedback text-red-500';
+                    }
+                } catch (error) { 
+                    console.error('Error submitting inquiry form:', error);
+                    contactFormFeedback.textContent = 'An unexpected error occurred. Please try again or contact us directly.';
+                    contactFormFeedback.className = 'contact-form-feedback text-red-500';
+                } finally {
+                     if(submitButton) submitButton.disabled = false; 
+                     setTimeout(() => {if(contactFormFeedback) contactFormFeedback.textContent = ''}, 7000); 
+                }
+            });
+        }
+
+        if(menuButton && mobileMenu) {
+            menuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        }
         
         const mobileNavLinks = Array.from(mobileMenu ? mobileMenu.querySelectorAll('a') : []);
-        mobileNavLinks.forEach(link => link.addEventListener('click', () => mobileMenu.classList.add('hidden')));
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if(mobileMenu) mobileMenu.classList.add('hidden');
+            });
+        });
         
-        const currentYearEl = document.getElementById('currentYear');
         if(currentYearEl) currentYearEl.textContent = new Date().getFullYear();
 
         const navLinks = document.querySelectorAll('.nav-link');
-        const sections = document.querySelectorAll('main section');
+        const sections = document.querySelectorAll('main section'); 
         const header = document.querySelector('header');
-        let headerHeight = header ? header.offsetHeight : 70;
+        let headerHeight = header ? header.offsetHeight : 70; 
 
-        window.addEventListener('resize', () => headerHeight = header ? header.offsetHeight : 70);
+        window.addEventListener('resize', () => {
+            headerHeight = header ? header.offsetHeight : 70;
+        });
         
-        function updateActiveNavLink() { /* ... (as before) ... */ }
+        /**
+         * Updates the active state of navigation links based on scroll position.
+         */
+        function updateActiveNavLink() { 
+            let currentSectionId = '';
+            const availableSections = document.querySelectorAll('main section'); 
+            availableSections.forEach(section => {
+                const sectionTop = section.offsetTop - headerHeight - 20; 
+                if (window.scrollY >= sectionTop) {
+                    currentSectionId = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('nav-link-active');
+                if (link.getAttribute('href') === `#${currentSectionId}`) {
+                    link.classList.add('nav-link-active');
+                }
+            });
+        }
         
         window.addEventListener('load', () => {
             fetchAndDisplayCustomerProducts(); 
             populateCountryCodeDropdowns();
-            populateCountries();
+            populateCountries(); 
             updateActiveNavLink(); 
             renderOrderSummary(); 
-            
-            const contactForm = document.getElementById('inquiry-form');
-            if (contactForm) {
-                contactForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    const feedbackEl = document.getElementById('contact-form-feedback');
-                    if(feedbackEl) {
-                        feedbackEl.textContent = 'Submitting your inquiry...';
-                        feedbackEl.className = 'contact-form-feedback text-sky-400';
-                    }
-
-                    const formData = new FormData(this);
-                    
-                    try {
-                        const response = await fetch(`${BACKEND_URL}/api/inquiry/submit`, {
-                            method: 'POST',
-                            body: formData, 
-                        });
-                        
-                        const result = await response.json();
-
-                        if (response.ok) {
-                            if(feedbackEl) {
-                                feedbackEl.textContent = result.message;
-                                feedbackEl.className = 'contact-form-feedback text-green-500';
-                            }
-                            this.reset(); 
-                        } else {
-                            if(feedbackEl) {
-                                feedbackEl.textContent = result.message || `Error: ${response.status}`;
-                                feedbackEl.className = 'contact-form-feedback text-red-500';
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error submitting inquiry form:', error);
-                        if(feedbackEl) {
-                            feedbackEl.textContent = 'An unexpected error occurred. Please try again.';
-                            feedbackEl.className = 'contact-form-feedback text-red-500';
-                        }
-                    }
-                    if(feedbackEl) setTimeout(() => feedbackEl.textContent = '', 7000);
-                });
-            }
         });
         window.addEventListener('scroll', updateActiveNavLink); 
 
