@@ -1043,30 +1043,23 @@
                     return;
                 }
 
+                // Construct orderData to match emailService expectations more closely
                 const orderData = {
-                    customerDetails: {
-                        name: customerName,
-                        email: customerEmail,
-                        mobile: customerMobileCode + customerMobile,
-                        whatsapp: customerWhatsappCodeVal + customerWhatsappNum,
-                        address: customerAddress,
-                        country: customerCountryVal,
-                        state: customerStateVal,
-                        city: customerCityVal,
-                        pincode: customerPincode,
-                    },
-                    items: currentOrder.flatMap(productGroup => 
-                        productGroup.variants.map(variant => ({
-                            productId: productGroup.baseProductId,
-                            productName: productGroup.baseProductName,
-                            dimension: variant.dimension,
-                            quantity: variant.quantity,
-                            basePrice: variant.basePrice,
-                            gstRate: variant.gstRate,
-                            priceIncGst: variant.priceIncGst 
-                        }))
-                    ),
-                    totalAmount: parseFloat(orderTotalElement.textContent), 
+                    customerName: customerName,
+                    customerEmail: customerEmail,
+                    mobileCode: customerMobileCode,
+                    mobileNumber: customerMobile,
+                    whatsappCode: customerWhatsappCodeVal,
+                    whatsappNumber: customerWhatsappNum,
+                    address: customerAddress, // Assuming emailService uses these directly
+                    city: customerCityVal,
+                    state: customerStateVal,
+                    country: customerCountryVal,
+                    pincode: customerPincode,
+                    
+                    orderItems: currentOrder, // currentOrder is already in the correct grouped structure
+                    
+                    totalOrderValue: orderTotalElement.textContent, // e.g., "123.00 Rs"
                     paymentMethod: "Pending" 
                 };
 
@@ -1079,7 +1072,7 @@
                 placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/orders/place`, {
+                    const response = await fetch(`${BACKEND_URL}/api/orders/place-order`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(orderData)
@@ -1087,7 +1080,8 @@
                     const result = await response.json();
                     if (response.ok) { 
                         if(orderFeedback) {
-                            orderFeedback.textContent = `Order placed successfully! Order ID: ${result.orderId}. We will contact you shortly.`;
+                            // Use the message from the backend, as orderId might not be in result if not saved to DB yet.
+                            orderFeedback.textContent = result.message || 'Order placed successfully! We will contact you shortly.';
                             orderFeedback.className = 'text-center text-sm mt-4 text-green-500';
                         }
                         currentOrder = []; 
