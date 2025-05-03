@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamma Ortho Instruments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: #18181b; /* zinc-900 */
+            color: #e4e4e7; /* zinc-200 */
+        }
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #27272a; } /* zinc-800 */
+        ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 10px; } /* zinc-600 */
+        ::-webkit-scrollbar-thumb:hover { background: #71717a; } /* zinc-500 */
+        
+        .nav-link-active { font-weight: 600; color: #ffffff; }
+
+        .input-base-style, 
+        .product-quantity-input, 
+        .dimension-select, 
+        .category-select, 
+        .file-input, 
+        .country-code-select {
+            padding: 0.75rem 1rem; 
+            border-radius: 0.5rem; 
+            border: 1px solid #3f3f46; /* zinc-700 */
+            background-color: #27272a; /* zinc-800 */
+            color: #e4e4e7; /* zinc-200 */
+            width: 100%;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-base-style:focus, 
+        .product-quantity-input:focus, 
+        .dimension-select:focus, 
+        .category-select:focus, 
+        .file-input:focus, 
+        .country-code-select:focus {
+            outline: none;
+            border-color: #a1a1aa; /* zinc-400 */
+            box-shadow: 0 0 0 3px rgba(161, 161, 170, 0.3); 
+        }
+
+        .product-quantity-input {
+             width: 70px; 
+             padding: 0.5rem;
+             text-align: center;
+        }
+        .country-code-select {
+            padding-right: 1.75rem; 
+        }
+        .file-input {
+            padding: 0.5rem; 
+        }
+        .file-input::file-selector-button { 
+            font-weight: 600;
+            color: #18181b; 
+            background-color: #d4d4d8; 
+            border: none;
+            padding: 0.6rem 1rem;
+            margin-right: 0.75rem;
+            border-radius: 0.375rem; 
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .file-input::file-selector-button:hover {
+            background-color: #e4e4e7; 
+        }
+        .input-base-style::placeholder, 
+        .dimension-select option, 
+        .category-select option, 
+        .country-code-select option {
+            color: #a1a1aa; /* zinc-400 */
+        }
+
+        .order-item-action-button {
+            background-color: #b91c1c; 
+            color: white;
+            padding: 0.35rem 0.6rem; 
+            border-radius: 0.375rem; 
+            font-size: 0.75rem; 
+            line-height: 1rem;
+            transition: background-color 0.2s;
+        }
+        .order-item-action-button:hover {
+            background-color: #991b1b; 
+        }
+
+        #product-search-input { 
+            flex-grow: 1; 
+        }
+        
+        .product-price-display { 
+            font-weight: 700; 
+            font-size: 1.125rem; 
+            color: #f4f4f5; 
+            margin-bottom: 0.75rem; 
+        }
+        
+        .order-product-group {
+            background-color: #27272a; 
+            padding: 1.25rem; 
+            border-radius: 0.75rem; 
+            margin-bottom: 1rem; 
+        }
+        .order-variant-item {
+            border-top: 1px solid #3f3f46; 
+            padding-top: 0.75rem; 
+            margin-top: 0.75rem; 
+        }
+        .order-variant-item:first-child {
+            border-top: none;
+            padding-top: 0;
+            margin-top: 0;
+        }
+        
+        #product-filter-options-container { 
+            margin-bottom: 1.5rem; 
+            padding: 1.5rem; 
+            background-color: #27272a; 
+            border-radius: 0.75rem; 
+        }
+        #product-filter-options-container h3 {
+            font-size: 1.25rem; 
+            font-weight: 600; 
+            color: #f4f4f5; 
+            margin-bottom: 1rem; 
+        }
+        .product-filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem; 
+        }
+        .product-filter-options label {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 1rem; 
+            background-color: #3f3f46; 
+            color: #d4d4d8; 
+            border-radius: 0.5rem; 
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .product-filter-options label:hover, .product-filter-options input[type="checkbox"]:checked + span {
+            background-color: #52525b; 
+            color: #f4f4f5; 
+        }
+        .product-filter-options input[type="checkbox"] {
+            opacity: 0;
+            position: absolute;
+            width: 1px;
+            height: 1px;
+        }
+        #filter-toggle-button { 
+            padding: 0.75rem; 
+            background-color: #3f3f46; 
+            border: 1px solid #52525b; 
+            border-radius: 0.5rem; 
+            transition: background-color 0.2s;
+        }
+        #filter-toggle-button:hover {
+            background-color: #52525b; 
+        }
+        #contact-form-feedback, #order-feedback { 
+            text-align: center;
+            margin-top: 1.5rem; 
+            font-size: 0.875rem; 
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+        }
+        .feedback-success { background-color: #3f3f46; color: #a3e635; } 
+        .feedback-error { background-color: #3f3f46; color: #f87171; } 
+        .feedback-info { background-color: #3f3f46; color: #60a5fa; } 
+
+
+        .product-card-image { 
+            width: 100%; 
+            height: 20rem; 
+            object-fit: contain; 
+            padding: 1rem; 
+            background-color: #3f3f46; 
+            border-bottom: 1px solid #52525b; 
+        }
+
+        .btn-premium {
+            padding: 0.85rem 1.75rem; 
+            border-radius: 0.5rem; 
+            font-weight: 600; 
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s, color 0.2s;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid transparent;
+        }
+        .btn-premium:hover {
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .btn-premium-primary { /* This is our "white" button */
+            background-color: #f4f4f5; /* zinc-100 */
+            color: #18181b; /* zinc-900 */
+            border-color: #f4f4f5;
+        }
+        .btn-premium-primary:hover {
+            background-color: #e4e4e7; /* zinc-200 */
+            border-color: #e4e4e7;
+        }
+        .btn-premium-secondary { /* This is our "grey" button */
+            background-color: #3f3f46; /* zinc-700 */
+            color: #f4f4f5; /* zinc-100 */
+            border-color: #52525b; /* zinc-600 */
+        }
+        .btn-premium-secondary:hover {
+            background-color: #52525b; /* zinc-600 */
+            border-color: #71717a; /* zinc-500 */
+        }
+         .btn-premium-warning { /* Retained for "Clear Order" if a more distinct warning is needed, but currently overridden */
+            background-color: transparent;
+            color: #e4e4e7; 
+            border: 1px solid #71717a; 
+        }
+        .btn-premium-warning:hover {
+            background-color: #27272a; 
+            border-color: #a1a1aa; 
+            color: #f4f4f5; 
+        }
+         .btn-premium-success { /* This was the previous "Place Order" style, now used as a general success/primary style if needed elsewhere */
+            background-color: #e4e4e7; 
+            color: #18181b; 
+        }
+        .btn-premium-success:hover {
+            background-color: #f4f4f5; 
+        }
+         .btn-premium-orange { /* Retained for "Clear Details" if a more distinct style is needed, but currently overridden */
+            background-color: #3f3f46; 
+            color: #e4e4e7; 
+            border: 1px solid #52525b; 
+        }
+        .btn-premium-orange:hover {
+            background-color: #52525b; 
+            border-color: #71717a; 
+        }
+
+        /* Home section background styling */
+        #home {
+            background-image: url('https://i.ibb.co/V0QzKqXD/Screenshot-2025-05-03-at-9-55-54-PM.png'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative; 
+        }
+        #home::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(24, 24, 27, 0.6); /* zinc-900 with 60% opacity for better text contrast */
+        }
+        #home > .container {
+            position: relative;
+            z-index: 1;
+        }
+
+
+    </style>
+</head>
+<body class="bg-zinc-900 text-zinc-200">
+
+    <header class="bg-zinc-800 shadow-lg sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-zinc-100 hover:text-white transition-colors">Gamma Ortho</a>
+            <div class="space-x-2 hidden md:flex">
+                <a href="#home" class="nav-link text-zinc-300 hover:text-white px-4 py-2 rounded-md transition-colors">Home</a>
+                <a href="#products" class="nav-link text-zinc-300 hover:text-white px-4 py-2 rounded-md transition-colors">Products</a>
+                <a href="#order-review" class="nav-link text-zinc-300 hover:text-white px-4 py-2 rounded-md transition-colors">Review Order</a>
+                <a href="#about" class="nav-link text-zinc-300 hover:text-white px-4 py-2 rounded-md transition-colors">About Us</a>
+                <a href="#contact" class="nav-link text-zinc-300 hover:text-white px-4 py-2 rounded-md transition-colors">Contact</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-zinc-300 hover:text-white focus:outline-none">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden bg-zinc-800 shadow-xl">
+            <a href="#home" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">Home</a>
+            <a href="#products" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">Products</a>
+            <a href="#order-review" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">Review Order</a>
+            <a href="#about" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">About Us</a>
+            <a href="#contact" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">Contact</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="home" class="text-white py-20 md:py-10">
+            <div class="container mx-auto px-6 text-center"> 
+                <h1 class="text-5xl md:text-5xl font-bold mb-8 text-zinc-50">Gamma Orthopedic Instruments</h1>
+                <p class="text-xl md:text-1.5xl text-zinc-300 mb-10 max-w-3xl mx-auto">
+                    Precision-engineered instruments for optimal surgical outcomes. Explore our innovative solutions.
+                </p>
+                <a href="#products" class="btn-premium btn-premium-primary text-lg">
+                    Explore Our Products <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </section>
+
+        <section id="products" class="py-20 md:py-28 bg-zinc-900">
+            <div class="container mx-auto px-6">
+                <h2 class="text-4xl md:text-5xl font-bold text-center text-zinc-100 mb-16">Our Products</h2>
+                
+                <div class="flex items-center gap-x-4 mb-8 max-w-2xl mx-auto">
+                    <button id="filter-toggle-button" class="text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-500 p-3 rounded-lg bg-zinc-700 hover:bg-zinc-600 transition-colors">
+                        <i class="fas fa-filter text-xl"></i>
+                    </button>
+                    <input type="text" id="product-search-input" placeholder="Search products by name or type" class="input-base-style text-lg">
+                    <button id="view-cart-btn" class="btn-premium btn-premium-secondary ml-auto flex-shrink-0">
+                        <i class="fas fa-shopping-cart mr-2"></i> View Cart
+                    </button>
+                </div>
+
+                <div id="product-filter-options-container" class="product-filter-container max-w-4xl mx-auto hidden">
+                    <h3>Filter by Product Type:</h3>
+                    <div id="product-type-filter-options" class="product-filter-options">
+                        <label><input type="checkbox" class="product-type-filter" value="all" checked><span>All Products</span></label>
+                        <label><input type="checkbox" class="product-type-filter" value="wire-pin"><span>Wire and Pin</span></label>
+                        <label><input type="checkbox" class="product-type-filter" value="ao-fixator"><span>A O-Fixator</span></label>
+                        <label><input type="checkbox" class="product-type-filter" value="jess-fixator"><span>Jess Fixator</span></label>
+                        <label><input type="checkbox" class="product-type-filter" value="ring-fixator"><span>Ring Fixator</span></label>
+                        <label><input type="checkbox" class="product-type-filter" value="rail-fixator"><span>Rail Fixator</span></label>
+                    </div>
+                </div>
+                
+                <div id="product-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                    <p id="products-loading-message" class="text-center text-zinc-400 col-span-full text-lg">Loading products...</p>
+                    {/* Product cards will be dynamically inserted here by JavaScript */}
+                </div>
+            </div>
+        </section>
+
+        <section id="order-review" class="py-20 md:py-28 bg-zinc-800">
+            <div class="container mx-auto px-6">
+                <h2 class="text-4xl md:text-5xl font-bold text-center text-zinc-100 mb-12">Review Order</h2>
+                <div class="max-w-4xl mx-auto bg-zinc-900 p-8 md:p-10 rounded-xl shadow-2xl border border-zinc-600"> 
+                    
+                    <h3 class="text-3xl font-semibold text-zinc-100 mb-6">Order Summary</h3>
+                    <div id="order-items-container" class="mb-8 space-y-6"> 
+                        <p class="text-zinc-400 text-center py-4">Your order is currently empty. Add products to get started!</p>
+                    </div>
+                    <div class="border-t border-zinc-700 pt-6 mb-4 space-y-2">
+                        <p class="text-1x1 text-right text-zinc-300">Sub total: <span id="order-subtotal-without-gst" class="font-medium text-zinc-100">0.00 Rs</span></p>
+                        <p class="text-1x1 text-right text-zinc-300">Tax (GST): <span id="order-total-tax" class="font-medium text-zinc-100">0.00 Rs</span></p>
+                        <p class="text-2xl font-semibold text-right text-zinc-100">Total: <span id="order-final-total" class="text-white">0.00 Rs</span></p>
+                    </div>
+                    <div class="text-right mb-8">
+                         <button id="clear-order-btn" class="btn-premium btn-premium-secondary text-sm">Clear Order</button>
+                    </div>
+
+                    <h3 class="text-3xl font-semibold text-zinc-100 mb-8 mt-10">Your Details</h3>
+                    <div class="space-y-6"> 
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                            <div>
+                                <input type="text" id="customer-name" class="input-base-style" placeholder="Full Name *" required>
+                            </div>
+                            <div>
+                                <input type="email" id="customer-email" class="input-base-style" placeholder="Email Address *" required>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                            <div>
+                                <div class="flex">
+                                    <select id="customer-mobile-code" class="country-code-select mr-2 w-32"></select> 
+                                    <input type="tel" id="customer-mobile" class="input-base-style flex-grow" placeholder="Mobile No. *" required>
+                                </div>
+                            </div>
+                            <div>
+                                 <div class="flex">
+                                    <select id="customer-whatsapp-code" class="country-code-select mr-2 w-32"></select> 
+                                    <input type="tel" id="customer-whatsapp" class="input-base-style flex-grow" placeholder="WhatsApp No.">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <textarea id="customer-address" rows="3" class="input-base-style" placeholder="Full Delivery Address *" required></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
+                             <div>
+                                <select id="customer-country" class="input-base-style select-field" required>
+                                    <option value=""> Select Country *</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select id="customer-state" class="input-base-style select-field" required disabled>
+                                     <option value=""> Select State *</option>
+                                </select>
+                            </div>
+                             <div>
+                                <select id="customer-city" class="input-base-style select-field" required disabled>
+                                     <option value=""> Select City * </option>
+                                </select>
+                            </div>
+                        </div>
+                         <div> 
+                            <input type="text" id="customer-pincode" class="input-base-style" placeholder="Pincode / Zip Code *" required>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-10">
+                        <button id="clear-details-btn" class="btn-premium btn-premium-secondary w-full sm:w-auto">Clear Details</button> 
+                        <button id="place-order-btn" class="btn-premium btn-premium-primary w-full sm:w-auto flex-grow text-lg">Place Order</button>
+                    </div>
+                     <p id="order-feedback" class="text-center text-sm mt-6"></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="py-20 md:py-28 bg-zinc-900">
+             <div class="container mx-auto px-6">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h2 class="text-4xl md:text-5xl font-bold text-zinc-100 mb-8">About Gamma Ortho Instruments</h2>
+                    <p class="text-lg text-zinc-300 leading-relaxed mb-6">
+                        Gamma Ortho Instruments is dedicated to advancing orthopedic surgery through innovative and high-quality instruments. Our commitment to excellence ensures that every product we offer meets the highest standards of precision, durability, and reliability. Our mission is to empower healthcare professionals with the tools they need to achieve optimal patient outcomes.
+                    </p>
+                    <p class="text-lg text-zinc-400">GSTN: 24ABCFG6367R1ZR</p>
+                    <p class="text-lg text-zinc-400">Drug Liscence: 24ABCFG6367R1ZR</p>
+                    </div>
+            </div>
+        </section>
+
+        <section id="contact" class="py-20 md:py-28 bg-zinc-800">
+            <div class="container mx-auto px-6">
+                 <h2 class="text-4xl md:text-5xl font-bold text-center text-zinc-100 mb-12">Get In Touch</h2>
+                <div class="max-w-3xl mx-auto bg-zinc-900 p-8 md:p-10 rounded-xl shadow-2xl border border-zinc-600"> 
+                    <form id="inquiry-form" class="space-y-6"> 
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6"> 
+                            <div>
+                                <input type="text" id="contact-name" name="contact-name" class="input-base-style" placeholder="Full Name *" required>
+                            </div>
+                            <div>
+                                <input type="email" id="contact-email" name="contact-email" class="input-base-style" placeholder="Email Address *" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6"> 
+                            <div>
+                                <div class="flex">
+                                    <select id="contact-form-mobile-code" class="country-code-select mr-2 w-34"></select>
+                                    <input type="tel" id="contact-mobile" name="contact-mobile" class="input-base-style flex-grow" placeholder="Mobile No. *" required>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex">
+                                    <select id="contact-form-whatsapp-code" class="country-code-select mr-2 w-34"></select>
+                                    <input type="tel" id="contact-whatsapp" name="contact-whatsapp" class="input-base-style flex-grow" placeholder="WhatsApp No.">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="text" id="contact-hospital" name="contact-hospital" class="input-base-style" placeholder="Hospital/Clinic (Optional)">
+                        </div>
+                        <div>
+                            <select id="contact-category" name="contact-category" class="category-select input-base-style select-field" required>
+                                <option value="">Inquiry Category *</option>
+                                <option value="product_related">Product Related</option>
+                                <option value="payment_related">Payment Related</option>
+                                <option value="delivery_related">Delivery Related</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <textarea id="contact-message" name="contact-message" rows="5" class="input-base-style" placeholder="Message *" required></textarea>
+                        </div>
+                        <div> 
+                            <input type="file" id="contact-files" name="contact-files[]" class="file-input input-base-style" multiple>
+                            <p class="text-xs text-zinc-400 mt-1">You can select multiple files. Max 5MB each.</p>
+                        </div>
+                        <div class="text-center pt-2"> 
+                            <button type="submit" class="btn-premium btn-premium-primary w-full md:w-auto text-lg">
+                                Send Inquiry <i class="fas fa-paper-plane ml-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <p id="contact-form-feedback" class="contact-form-feedback"></p>
+                    <div class="mt-12 text-center text-zinc-300 border-t border-zinc-700 pt-8">
+                        <p class="text-xl font-medium mb-4">Or Reach Us Directly:</p>
+                        <p class="mb-2"><i class="fas fa-phone-alt mr-2 text-zinc-400"></i> <a href="tel:+919998600047" class="hover:text-white transition-colors">+91-99986 00047</a></p>
+                        <p class="mb-2"><a href="https://wa.me/919998600047" target="_blank" class="hover:text-white transition-colors"><i class="fab fa-whatsapp mr-2 text-zinc-400 text-lg"></i> +91-99986 00047</a></p>
+                        <p class="mb-2"><i class="fas fa-envelope mr-2 text-zinc-400"></i> <a href="mailto:amit_chhatrala@yahoo.com" class="hover:text-white transition-colors">amit_chhatrala@yahoo.com</a></p>
+                        <p class="mt-3 text-zinc-400 leading-relaxed"><i class="fas fa-map-marker-alt mr-2 text-zinc-400"></i> Plot No. 17, Bhumi Industrial Area - 2, Anand Liner Gate, Veraval - Shapar, Rajkot - 360 024 (Gujarat) India</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-zinc-800 text-zinc-400 py-12 border-t border-zinc-700">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; <span id="currentYear"></span> Gamma Ortho Instruments. All rights reserved.</p>
+            <p class="text-sm mt-2">Designed with precision for the medical community.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Global constants for GST rate and backend API URL
+        const GST_RATE = 0.12; 
+        const BACKEND_URL = 'https://gamma-ortho.onrender.com'; 
+
+        // Global array to store all products fetched from the backend
+        let allFetchedProducts = []; 
+        // Global array to store items currently in the customer's order
+        let currentOrder = []; 
+
+        // Predefined country codes for phone number input
+        const countryCodes = [ { name: "IND", code: "+91" }, { name: "USA", code: "+1" }, { name: "UK", code: "+44" }];
+        // Location data for populating country, state, and city dropdowns
+        const locationData = {
+            "India": { /* States and cities for India */
+                "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool"],
+                "Arunachal Pradesh": ["Itanagar", "Naharlagun", "Pasighat"],
+                "Assam": ["Guwahati", "Dibrugarh", "Silchar", "Jorhat"],
+                "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur"],
+                "Chhattisgarh": ["Raipur", "Bhilai", "Korba", "Bilaspur"],
+                "Goa": ["Panaji", "Margao", "Vasco da Gama"],
+                "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana"],
+                "Haryana": ["Faridabad", "Gurugram", "Panipat", "Ambala", "Yamunanagar", "Rohtak", "Hisar"],
+                "Himachal Pradesh": ["Shimla", "Solan", "Dharamshala", "Kullu", "Mandi", "Palampur"],
+                "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro Steel City", "Deoghar"],
+                "Karnataka": ["Bengaluru", "Hubballi-Dharwad", "Mysuru", "Mangaluru", "Belagavi", "Davanagere", "Ballari"],
+                "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Alappuzha"],
+                "Madhya Pradesh": ["Indore", "Bhopal", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Rewa"],
+                "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Solapur", "Amravati", "Navi Mumbai"],
+                "Manipur": ["Imphal", "Thoubal", "Bishnupur", "Churachandpur"],
+                "Meghalaya": ["Shillong", "Tura", "Nongstoin", "Jowai"],
+                "Mizoram": ["Aizawl", "Lunglei", "Saiha", "Champhai"],
+                "Nagaland": ["Kohima", "Dimapur", "Mokokchung", "Tuensang"],
+                "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Puri", "Sambalpur", "Berhampur"],
+                "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali"],
+                "Rajasthan": ["Jaipur", "Jodhpur", "Kota", "Bikaner", "Udaipur", "Ajmer", "Alwar"],
+                "Sikkim": ["Gangtok", "Namchi", "Mangan", "Geyzing"],
+                "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Erode"],
+                "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Ramagundam", "Khammam"],
+                "Tripura": ["Agartala", "Udaipur (Tripura)", "Dharmanagar", "Kailasahar"],
+                "Uttar Pradesh": ["Lucknow", "Kanpur", "Ghaziabad", "Agra", "Meerut", "Varanasi", "Prayagraj", "Noida", "Bareilly"],
+                "Uttarakhand": ["Dehradun", "Haridwar", "Roorkee", "Haldwani", "Rudrapur", "Kashipur"],
+                "West Bengal": ["Kolkata", "Howrah", "Asansol", "Siliguri", "Durgapur", "Bardhaman", "Malda"],
+                "Andaman and Nicobar Islands": ["Port Blair", "Car Nicobar", "Mayabunder"],
+                "Chandigarh": ["Chandigarh"],
+                "Dadra and Nagar Haveli and Daman and Diu": ["Daman", "Silvassa", "Diu"],
+                "Lakshadweep": ["Kavaratti", "Agatti", "Amini", "Andrott"],
+                "Delhi (National Capital Territory)": ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi", "Central Delhi"],
+                "Puducherry": ["Puducherry", "Karaikal", "Yanam", "Mahe"],
+                "Ladakh": ["Leh", "Kargil"],
+                "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Udhampur"]
+            },
+            "USA": { /* States and cities for USA */
+                "California": ["Los Angeles", "San Francisco", "San Diego", "Sacramento", "Oakland", "Fresno", "Long Beach"],
+                "New York": ["New York City", "Buffalo", "Rochester", "Albany", "Syracuse", "Yonkers"],
+                "Texas": ["Houston", "Dallas", "Austin", "San Antonio", "Fort Worth", "El Paso"]
+            },
+            "UK": { /* Regions and cities for UK */
+                "England": ["London", "Manchester", "Birmingham", "Liverpool", "Bristol", "Leeds", "Sheffield"],
+                "Scotland": ["Edinburgh", "Glasgow", "Aberdeen", "Dundee"],
+                "Wales": ["Cardiff", "Swansea", "Newport"]
+            }
+        };
+
+        // DOM Element references, fetched once for efficiency
+        const productListContainer = document.getElementById('product-list-container');
+        const productsLoadingMessage = document.getElementById('products-loading-message');
+        const orderItemsContainer = document.getElementById('order-items-container');
+        
+        const orderSubtotalWithoutGstElement = document.getElementById('order-subtotal-without-gst');
+        const orderTotalTaxElement = document.getElementById('order-total-tax');
+        const orderFinalTotalElement = document.getElementById('order-final-total'); 
+
+        const placeOrderBtn = document.getElementById('place-order-btn');
+        const clearOrderBtn = document.getElementById('clear-order-btn');
+        const orderFeedback = document.getElementById('order-feedback');
+        const clearDetailsBtn = document.getElementById('clear-details-btn');
+        const countrySelect = document.getElementById('customer-country');
+        const stateSelect = document.getElementById('customer-state');
+        const citySelect = document.getElementById('customer-city'); 
+        const productSearchInput = document.getElementById('product-search-input');
+        const productTypeFilters = document.querySelectorAll('.product-type-filter');
+        const filterToggleButton = document.getElementById('filter-toggle-button');
+        const filterOptionsContainer = document.getElementById('product-filter-options-container');
+        const inquiryForm = document.getElementById('inquiry-form');
+        const contactFormFeedback = document.getElementById('contact-form-feedback');
+        const menuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const currentYearEl = document.getElementById('currentYear');
+        const customerNameInput = document.getElementById('customer-name');
+        const customerEmailInput = document.getElementById('customer-email');
+        const customerMobileCodeInput = document.getElementById('customer-mobile-code');
+        const customerMobileInput = document.getElementById('customer-mobile');
+        const customerWhatsappCodeInput = document.getElementById('customer-whatsapp-code');
+        const customerWhatsappInput = document.getElementById('customer-whatsapp');
+        const customerAddressInput = document.getElementById('customer-address');
+        const customerPincodeInput = document.getElementById('customer-pincode');
+        const contactFormMobileCodeInput = document.getElementById('contact-form-mobile-code');
+        const contactFormWhatsappCodeInput = document.getElementById('contact-form-whatsapp-code');
+        const viewCartBtn = document.getElementById('view-cart-btn'); 
+
+
+        /**
+         * Populates the dimension dropdown and initial price for a product card.
+         * @param {HTMLElement} cardElement - The product card's root DOM element.
+         * @param {Array} dimensions - Array of dimension objects for the product.
+         * @param {string} productId - The unique ID of the product.
+         */
+        function populateDimensionDropdownsOnCard(cardElement, dimensions, productId) {
+            const selectElement = cardElement.querySelector(`#dim-${productId}`);
+            const priceDisplayElement = cardElement.querySelector(`#price-display-${productId}`);
+            const gstRateTextElements = cardElement.querySelectorAll('.gst-rate-text'); 
+
+            if (!selectElement || !priceDisplayElement) {
+                console.warn(`Missing select or price display for product ${productId} on card.`);
+                if(priceDisplayElement) priceDisplayElement.textContent = "N/A";
+                return;
+            }
+
+            if (!dimensions || dimensions.length === 0) {
+                selectElement.innerHTML = '<option value="">N/A</option>';
+                selectElement.disabled = true;
+                priceDisplayElement.textContent = "N/A";
+                if (gstRateTextElements.length > 0) gstRateTextElements.forEach(el => el.textContent = 'N/A');
+                return;
+            }
+            
+            selectElement.disabled = false; 
+            const productData = allFetchedProducts.find(p => p._id === productId);
+            const currentProductGst = (productData && typeof productData.gstRate === 'number') ? productData.gstRate : GST_RATE;
+            gstRateTextElements.forEach(el => el.textContent = (currentProductGst * 100).toFixed(0));
+            
+            selectElement.innerHTML = ''; 
+
+            dimensions.forEach((dim, index) => {
+                const option = document.createElement('option');
+                option.value = dim.dimensionName;
+                option.textContent = dim.dimensionName;
+                option.dataset.basePrice = dim.basePrice; 
+                selectElement.appendChild(option);
+
+                if (index === 0) {
+                    priceDisplayElement.textContent = parseFloat(dim.basePrice).toFixed(2);
+                }
+            });
+
+            selectElement.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const basePrice = parseFloat(selectedOption.dataset.basePrice);
+                priceDisplayElement.textContent = basePrice.toFixed(2);
+            });
+        }
+        
+        /**
+         * Renders product cards into the product list container.
+         * @param {Array} productsToRender - Array of product objects to display.
+         */
+        function renderProducts(productsToRender) {
+            if (!productListContainer) {
+                console.error("Product list container not found for rendering products!");
+                return;
+            }
+            productListContainer.innerHTML = ''; 
+            
+            if (!productsToRender || productsToRender.length === 0) {
+                productListContainer.innerHTML = '<p class="text-center text-zinc-400 col-span-full py-8 text-lg">No products found matching your criteria.</p>';
+                return;
+            }
+
+            productsToRender.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card bg-zinc-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:scale-[1.02]';
+                card.dataset.productId = product._id; 
+                card.dataset.productName = product.name.toLowerCase(); 
+                card.dataset.productType = product.productType ? product.productType.toLowerCase() : 'unknown'; 
+
+                let initialBasePrice = "N/A";
+                if (product.dimensions && product.dimensions.length > 0 && product.dimensions[0].basePrice !== undefined) {
+                    initialBasePrice = parseFloat(product.dimensions[0].basePrice).toFixed(2);
+                }
+                
+                const placeholderImage = `https://placehold.co/600x400/3f3f46/e4e4e7?text=${encodeURIComponent(product.name)}`; // zinc-700/zinc-200
+                const displayGstRate = (typeof product.gstRate === 'number' ? product.gstRate : GST_RATE) * 100;
+
+                card.innerHTML = `
+                    <img src="${product.baseImageURL || placeholderImage}" alt="${product.name}" class="product-card-image" onerror="this.onerror=null; this.src='${placeholderImage}';">
+                    <div class="p-5 md:p-6">
+                        <h3 class="text-xl font-semibold text-zinc-100 mb-2 product-name truncate" title="${product.name}">${product.name}</h3>
+                        <p class="product-price-display">Price: <span id="price-display-${product._id}">${initialBasePrice}</span> Rs + <span class="gst-rate-text">${displayGstRate.toFixed(0)}</span>% GST</p>
+                        <div class="mb-4">
+                            <label for="dim-${product._id}" class="block text-sm font-medium text-zinc-300 mb-1">Select Dimension:</label>
+                            <select id="dim-${product._id}" class="dimension-select"></select>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <label for="qty-${product._id}" class="text-sm text-zinc-300">Qty:</label>
+                            <input type="number" id="qty-${product._id}" min="1" value="1" class="product-quantity-input">
+                            <button class="add-to-order-btn btn-premium btn-premium-secondary text-sm flex-grow">
+                                <i class="fas fa-cart-plus mr-2"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productListContainer.appendChild(card);
+                populateDimensionDropdownsOnCard(card, product.dimensions, product._id); 
+
+                const addToOrderButton = card.querySelector('.add-to-order-btn');
+                if (addToOrderButton) {
+                    addToOrderButton.addEventListener('click', () => {
+                        console.log('Add to cart clicked for product:', product.name, product._id); 
+
+                        const quantityInput = card.querySelector(`#qty-${product._id}`);
+                        const dimensionSelect = card.querySelector(`#dim-${product._id}`);
+                        const quantity = parseInt(quantityInput.value);
+                        const selectedDimensionName = dimensionSelect.value;
+                        
+                        console.log('Selected dimension name:', selectedDimensionName, 'Quantity:', quantity); 
+
+                        if (!selectedDimensionName) {
+                            if(orderFeedback) {
+                                orderFeedback.textContent = 'Please select a dimension for the product.';
+                                orderFeedback.className = 'feedback-error'; 
+                                setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; orderFeedback.className = '';}, 3000);
+                            }
+                            return;
+                        }
+
+                        const fullProductData = allFetchedProducts.find(p => p._id === product._id);
+                        if (!fullProductData || !fullProductData.dimensions) {
+                            console.error("Could not find full product data or dimensions for ID:", product._id, "Full data:", fullProductData);
+                            if(orderFeedback) {
+                                orderFeedback.textContent = 'Error finding product details. Please refresh.';
+                                orderFeedback.className = 'feedback-error';
+                                setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; orderFeedback.className = '';}, 3000);
+                            }
+                            return;
+                        }
+
+                        const selectedDimensionData = fullProductData.dimensions.find(d => d.dimensionName === selectedDimensionName);
+                        console.log('Found dimension data:', selectedDimensionData); 
+                        
+                        const productGstRate = (typeof fullProductData.gstRate === 'number') ? fullProductData.gstRate : GST_RATE;
+                        console.log('Product GST rate to be used for order item:', productGstRate); 
+
+                        if (quantity > 0 && selectedDimensionData) { 
+                            addItemToOrder(product._id, product.name, selectedDimensionName, quantity, selectedDimensionData.basePrice, productGstRate);
+                            if(quantityInput) quantityInput.value = '1'; 
+                        } else {
+                            let errorMsg = 'Please enter a valid quantity.';
+                            if (!selectedDimensionData) {
+                                errorMsg = 'Could not find data for the selected dimension.';
+                            }
+                            if(orderFeedback) {
+                                orderFeedback.textContent = errorMsg;
+                                orderFeedback.className = 'feedback-error';
+                            }
+                            console.error("Add to cart error:", errorMsg, "Selected Dim Data:", selectedDimensionData, "GST Rate:", productGstRate);
+                            setTimeout(() => { if(orderFeedback) orderFeedback.textContent = ''; orderFeedback.className = ''; }, 3000);
+                        }
+                    });
+                }
+            });
+        }
+
+        /**
+         * Fetches products from the backend API and triggers rendering.
+         */
+        async function fetchAndDisplayCustomerProducts() {
+            if (productsLoadingMessage) productsLoadingMessage.classList.remove('hidden');
+            try {
+                console.log(`Fetching products from: ${BACKEND_URL}/api/products`);
+                const response = await fetch(`${BACKEND_URL}/api/products`);
+                console.log(`Response status from /api/products: ${response.status}`);
+                if (!response.ok) { 
+                    let errorText = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorResult = await response.json(); 
+                        errorText = errorResult.message || errorText;
+                        console.error("Error fetching products (JSON):", errorResult);
+                    } catch (e) { 
+                        errorText = await response.text(); 
+                        console.error("Error fetching products (text):", errorText);
+                    }
+                    throw new Error(errorText);
+                }
+                allFetchedProducts = await response.json(); 
+                console.log("Fetched products:", allFetchedProducts);
+                if (productsLoadingMessage) productsLoadingMessage.classList.add('hidden');
+                applyFiltersAndSearch(); 
+            } catch (error) {
+                console.error('Error fetching products for customer site:', error);
+                if (productsLoadingMessage) productsLoadingMessage.classList.add('hidden');
+                if(productListContainer) productListContainer.innerHTML = `<p class="text-center text-red-400 col-span-full py-8 text-lg">Error loading products. ${error.message}. Please check console for details.</p>`;
+            }
+        }
+
+        /**
+         * Populates country code dropdowns for mobile and WhatsApp numbers.
+         */
+        function populateCountryCodeDropdowns() { 
+            const mobileCodeSelect = document.getElementById('customer-mobile-code');
+            const whatsappCodeSelect = document.getElementById('customer-whatsapp-code');
+            const contactMobileCodeSelect = document.getElementById('contact-form-mobile-code'); 
+            const contactWhatsappCodeSelect = document.getElementById('contact-form-whatsapp-code'); 
+            
+            const populateSelect = (selectElement) => {
+                if (selectElement) {
+                    countryCodes.forEach(country => {
+                        const option = document.createElement('option');
+                        option.value = country.code;
+                        option.textContent = `${country.name} (${country.code})`;
+                        if (country.name === "IND") option.selected = true; 
+                        selectElement.appendChild(option);
+                    });
+                }
+            };
+            
+            populateSelect(mobileCodeSelect);
+            populateSelect(whatsappCodeSelect);
+            populateSelect(contactMobileCodeSelect);
+            populateSelect(contactWhatsappCodeSelect);
+        }
+        
+        /**
+         * Populates the country dropdown in the customer details form.
+         */
+        function populateCountries() { 
+            if (!countrySelect) return;
+            countrySelect.innerHTML = '<option value=""> Select Country *</option>'; 
+            for (const country in locationData) {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            }
+            if (locationData.hasOwnProperty("India")) {
+                countrySelect.value = "India";
+                populateStates("India"); 
+            }
+        }
+
+        /**
+         * Populates the state dropdown based on the selected country.
+         * @param {string} country - The selected country name.
+         */
+        function populateStates(country) { 
+            if (!stateSelect || !citySelect || !locationData[country]) {
+                if(stateSelect) {
+                    stateSelect.innerHTML = '<option value=""> Select State *</option>'; 
+                    stateSelect.disabled = true;
+                }
+                if(citySelect) {
+                    citySelect.innerHTML = '<option value=""> Select City *</option>'; 
+                    citySelect.disabled = true;
+                }
+                return;
+            }
+            stateSelect.innerHTML = '<option value=""> Select State *</option>'; 
+            stateSelect.disabled = false;
+            citySelect.innerHTML = '<option value=""> Select City *</option>'; 
+            citySelect.disabled = true; 
+
+            for (const state in locationData[country]) {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            }
+        }
+
+        /**
+         * Populates the city dropdown based on the selected country and state.
+         * @param {string} country - The selected country name.
+         * @param {string} state - The selected state name.
+         */
+        function populateCities(country, state) { 
+            if (!citySelect || !locationData[country] || !locationData[country][state]) {
+                 if(citySelect) {
+                    citySelect.innerHTML = '<option value=""> Select City *</option>'; 
+                    citySelect.disabled = true;
+                }
+                return;
+            }
+            citySelect.innerHTML = '<option value=""> Select City *</option>'; 
+            citySelect.disabled = false;
+            locationData[country][state].forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+        }
+        
+        if (countrySelect) countrySelect.addEventListener('change', function() { populateStates(this.value); });
+        if (stateSelect) stateSelect.addEventListener('change', function() { if (countrySelect) { populateCities(countrySelect.value, this.value); }});
+
+        if(filterToggleButton && filterOptionsContainer) {
+            filterToggleButton.addEventListener('click', () => {
+                filterOptionsContainer.classList.toggle('hidden');
+            });
+        }
+
+        /**
+         * Applies search term and product type filters to the product list.
+         */
+        function applyFiltersAndSearch() {
+            let filteredProducts = [...allFetchedProducts]; 
+            const searchTerm = productSearchInput ? productSearchInput.value.toLowerCase().trim() : "";
+            
+            const selectedTypes = [];
+            let allProductsCheckboxChecked = true; 
+            const allCheckbox = document.querySelector('.product-type-filter[value="all"]');
+            if (allCheckbox) {
+                allProductsCheckboxChecked = allCheckbox.checked;
+            }
+
+            productTypeFilters.forEach(checkbox => {
+                if (checkbox.checked && checkbox.value !== 'all') {
+                    selectedTypes.push(checkbox.value.toLowerCase()); 
+                }
+            });
+
+            const showAllCategories = allProductsCheckboxChecked || selectedTypes.length === 0;
+            
+            if (!showAllCategories && selectedTypes.length > 0) {
+                filteredProducts = filteredProducts.filter(product => 
+                    product.productType && selectedTypes.includes(product.productType.toLowerCase())
+                );
+            }
+
+            if (searchTerm) {
+                filteredProducts = filteredProducts.filter(product => 
+                    product.name && product.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            renderProducts(filteredProducts); 
+        }
+
+        if(productSearchInput) productSearchInput.addEventListener('input', applyFiltersAndSearch);
+        
+        productTypeFilters.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                if (checkbox.value === 'all' && checkbox.checked) {
+                    productTypeFilters.forEach(cb => {
+                        if (cb.value !== 'all') cb.checked = false;
+                    });
+                } else if (checkbox.value !== 'all' && checkbox.checked) {
+                    const allCheckbox = document.querySelector('.product-type-filter[value="all"]');
+                    if(allCheckbox) allCheckbox.checked = false;
+                }
+                applyFiltersAndSearch(); 
+            });
+        });
+        
+        /**
+         * Renders the current order summary in the "Review Order" section.
+         */
+        function renderOrderSummary() {
+            console.log("renderOrderSummary called. currentOrder:", JSON.parse(JSON.stringify(currentOrder))); 
+            if (!orderItemsContainer || !orderSubtotalWithoutGstElement || !orderTotalTaxElement || !orderFinalTotalElement || !placeOrderBtn || !clearOrderBtn) {
+                console.error("One or more order summary DOM elements not found for renderOrderSummary!");
+                return;
+            }
+            orderItemsContainer.innerHTML = ''; 
+            
+            if (currentOrder.length === 0) {
+                orderItemsContainer.innerHTML = '<p class="text-zinc-400 text-center py-4">Your order is currently empty. Add products to get started!</p>';
+                orderSubtotalWithoutGstElement.textContent = '0.00 Rs';
+                orderTotalTaxElement.textContent = '0.00 Rs';
+                orderFinalTotalElement.textContent = '0.00 Rs';
+                placeOrderBtn.disabled = true;
+                placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                clearOrderBtn.disabled = true; 
+                clearOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            clearOrderBtn.disabled = false; 
+            clearOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            let subtotalWithoutGst = 0;
+            let totalTax = 0;
+            let grandTotal = 0; 
+
+            const mainUl = document.createElement('ul'); 
+            mainUl.className = 'space-y-6'; 
+
+            currentOrder.forEach(productGroup => {
+                const productLi = document.createElement('li');
+                productLi.className = 'order-product-group'; 
+
+                const productNameHeader = document.createElement('h4');
+                productNameHeader.className = 'text-xl font-semibold text-zinc-100 mb-3'; 
+                productNameHeader.textContent = productGroup.baseProductName;
+                productLi.appendChild(productNameHeader);
+
+                const variantsUl = document.createElement('ul'); 
+                variantsUl.className = 'space-y-3 pl-1'; 
+
+                productGroup.variants.forEach(variant => {
+                    const variantLi = document.createElement('li');
+                    variantLi.className = 'order-variant-item flex justify-between items-start text-sm'; 
+                    
+                    const baseSubtotalForVariant = variant.basePrice * variant.quantity;
+                    const gstForVariantSubtotal = baseSubtotalForVariant * variant.gstRate;
+                    const variantTotalWithGst = variant.priceIncGst * variant.quantity; 
+                    
+                    subtotalWithoutGst += baseSubtotalForVariant;
+                    totalTax += gstForVariantSubtotal;
+                    grandTotal += variantTotalWithGst; 
+
+                    variantLi.innerHTML = `
+                        <div class="flex-grow">
+                            <span class="text-zinc-200 font-medium">${variant.dimension}</span>
+                            <span class="text-xs text-zinc-400 block">Qty: ${variant.quantity}</span>
+                            <span class="text-xs text-zinc-400 block">
+                                Amount: ${baseSubtotalForVariant.toFixed(2)} Rs + GST: ${gstForVariantSubtotal.toFixed(2)} Rs
+                            </span>
+                        </div>
+                        <div class="flex items-center flex-shrink-0 ml-4">
+                            <span class="text-zinc-100 font-medium mr-3">${variantTotalWithGst.toFixed(2)} Rs</span>
+                            <button class="remove-item-btn order-item-action-button" data-variant-id="${variant.variantId}" title="Remove item">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    variantsUl.appendChild(variantLi);
+                });
+                productLi.appendChild(variantsUl);
+                mainUl.appendChild(productLi);
+            });
+
+            orderItemsContainer.appendChild(mainUl);
+            orderSubtotalWithoutGstElement.textContent = `${subtotalWithoutGst.toFixed(2)} Rs`;
+            orderTotalTaxElement.textContent = `${totalTax.toFixed(2)} Rs`;
+            orderFinalTotalElement.textContent = `${grandTotal.toFixed(2)} Rs`; 
+            console.log("Order summary rendered. Subtotal w/o GST:", subtotalWithoutGst.toFixed(2), "Total Tax:", totalTax.toFixed(2), "Final Total:", grandTotal.toFixed(2)); 
+        }
+
+        /**
+         * Adds an item (product variant) to the current order.
+         */
+        function addItemToOrder(baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate) { 
+            console.log('addItemToOrder called with:', {baseProductId, baseProductName, selectedDimensionName, quantity, basePrice, gstRate}); 
+            
+            const effectiveGstRate = (typeof gstRate === 'number' && !isNaN(gstRate)) ? gstRate : GST_RATE;
+            console.log('Effective GST Rate used for this item:', effectiveGstRate);
+
+            const priceIncGst = parseFloat(basePrice) * (1 + effectiveGstRate); 
+            const variantId = `${baseProductId}-${selectedDimensionName.replace(/\s+/g, '-')}`; 
+
+            let productGroup = currentOrder.find(pg => pg.baseProductId === baseProductId);
+
+            if (productGroup) { 
+                let variant = productGroup.variants.find(v => v.variantId === variantId);
+                if (variant) { 
+                    variant.quantity += quantity;
+                     console.log("Updated quantity for existing variant:", variantId, "New Qty:", variant.quantity); 
+                } else { 
+                    productGroup.variants.push({ 
+                        variantId: variantId,
+                        dimension: selectedDimensionName,
+                        basePrice: parseFloat(basePrice),
+                        gstRate: effectiveGstRate, 
+                        priceIncGst: priceIncGst, 
+                        quantity: quantity 
+                    });
+                    console.log("Added new variant to existing product group:", variantId); 
+                }
+            } else { 
+                currentOrder.push({
+                    baseProductId: baseProductId,
+                    baseProductName: baseProductName,
+                    variants: [{
+                        variantId: variantId,
+                        dimension: selectedDimensionName,
+                        basePrice: parseFloat(basePrice),
+                        gstRate: effectiveGstRate, 
+                        priceIncGst: priceIncGst, 
+                        quantity: quantity 
+                    }]
+                });
+                console.log("Added new product group with variant:", baseProductId, variantId); 
+            }
+            
+            if(orderFeedback) {
+                orderFeedback.textContent = `Added ${quantity} x ${baseProductName} (${selectedDimensionName}) to your cart.`;
+                orderFeedback.className = 'feedback-success'; 
+                setTimeout(() => { if(orderFeedback) {orderFeedback.textContent = ''; orderFeedback.className = '';} }, 3000);
+            }
+            renderOrderSummary(); 
+        }
+        
+        /**
+         * Removes an item (product variant) from the current order.
+         */
+        function removeItemFromOrder(variantIdToRemove) {
+            console.log("removeItemFromOrder called for variantId:", variantIdToRemove); 
+            let productGroupIndex = -1;
+            let variantIndexToRemove = -1;
+
+            for (let i = 0; i < currentOrder.length; i++) {
+                variantIndexToRemove = currentOrder[i].variants.findIndex(v => v.variantId === variantIdToRemove);
+                if (variantIndexToRemove > -1) {
+                    productGroupIndex = i;
+                    break;
+                }
+            }
+            console.log(`Found productGroupIndex: ${productGroupIndex}, variantIndexToRemove: ${variantIndexToRemove}`); 
+
+            if (productGroupIndex > -1 && variantIndexToRemove > -1) {
+                const removedItemName = `${currentOrder[productGroupIndex].baseProductName} (${currentOrder[productGroupIndex].variants[variantIndexToRemove].dimension})`;
+                currentOrder[productGroupIndex].variants.splice(variantIndexToRemove, 1);
+                console.log("Variant removed. Variants left in group:", currentOrder[productGroupIndex].variants.length); 
+
+                if (currentOrder[productGroupIndex].variants.length === 0) {
+                    currentOrder.splice(productGroupIndex, 1);
+                    console.log("Product group removed as it's empty."); 
+                }
+                
+                if(orderFeedback) {
+                    orderFeedback.textContent = `Removed ${removedItemName} from your order.`;
+                    orderFeedback.className = 'feedback-error';
+                    setTimeout(() => { if(orderFeedback) {orderFeedback.textContent = ''; orderFeedback.className = '';} }, 3000);
+                }
+            } else {
+                 console.warn("Could not find item to remove with variantId:", variantIdToRemove); 
+            }
+            renderOrderSummary(); 
+        }
+
+        if(orderItemsContainer) orderItemsContainer.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('.remove-item-btn');
+            if (removeButton) {
+                const variantId = removeButton.dataset.variantId;
+                console.log("Remove button clicked for variantId:", variantId); 
+                removeItemFromOrder(variantId);
+            }
+        });
+
+        if(placeOrderBtn) {
+            placeOrderBtn.addEventListener('click', async () => { 
+                console.log("Place Order button clicked.");
+                if(orderFeedback) {orderFeedback.textContent = ''; orderFeedback.className = '';}
+
+                const customerName = customerNameInput ? customerNameInput.value.trim() : '';
+                const customerEmail = customerEmailInput ? customerEmailInput.value.trim() : '';
+                const customerMobileCode = customerMobileCodeInput ? customerMobileCodeInput.value : '';
+                const customerMobile = customerMobileInput ? customerMobileInput.value.trim() : '';
+                const customerAddress = customerAddressInput ? customerAddressInput.value.trim() : '';
+                const customerCountryVal = countrySelect ? countrySelect.value : '';
+                const customerStateVal = stateSelect ? stateSelect.value : '';
+                const customerCityVal = citySelect ? citySelect.value : '';
+                const customerPincode = customerPincodeInput ? customerPincodeInput.value.trim() : '';
+                const customerWhatsappNum = customerWhatsappInput ? customerWhatsappInput.value.trim() : '';
+                const customerWhatsappCodeVal = customerWhatsappCodeInput ? customerWhatsappCodeInput.value : '';
+
+
+                if (!customerName || !customerEmail || !customerMobile || !customerAddress || !customerCountryVal || !customerStateVal || !customerCityVal || !customerPincode) {
+                    if(orderFeedback) {
+                        orderFeedback.textContent = 'Please fill in all required customer details.';
+                        orderFeedback.className = 'feedback-error';
+                    }
+                    return;
+                }
+                if (!/^\S+@\S+\.\S+$/.test(customerEmail)) { 
+                     if(orderFeedback) {
+                        orderFeedback.textContent = 'Please enter a valid email address.';
+                        orderFeedback.className = 'feedback-error';
+                    }
+                    return;
+                }
+
+                const orderData = {
+                    customerName: customerName,
+                    customerEmail: customerEmail,
+                    mobileCode: customerMobileCode,
+                    mobileNumber: customerMobile,
+                    whatsappCode: customerWhatsappCodeVal,
+                    whatsappNumber: customerWhatsappNum,
+                    address: customerAddress, 
+                    city: customerCityVal,
+                    state: customerStateVal,
+                    country: customerCountryVal,
+                    pincode: customerPincode,
+                    orderItems: currentOrder, 
+                    totalOrderValue: orderFinalTotalElement.textContent, 
+                    paymentMethod: "Pending" 
+                };
+
+                console.log("Order data to be sent:", JSON.stringify(orderData, null, 2));
+                if(orderFeedback) {
+                    orderFeedback.textContent = 'Placing your order...';
+                    orderFeedback.className = 'feedback-info';
+                }
+                placeOrderBtn.disabled = true; 
+                placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/orders/place-order`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(orderData)
+                    });
+                    const result = await response.json();
+                    if (response.ok) { 
+                        if(orderFeedback) {
+                            orderFeedback.textContent = result.message || 'Order placed successfully! We will contact you shortly.';
+                            orderFeedback.className = 'feedback-success';
+                        }
+                        currentOrder = []; 
+                        renderOrderSummary(); 
+                    } else { 
+                        if(orderFeedback) {
+                            orderFeedback.textContent = result.message || `Error placing order: ${response.status}`;
+                            orderFeedback.className = 'feedback-error';
+                        }
+                    }
+                } catch (error) { 
+                    console.error('Error placing order:', error);
+                    if(orderFeedback) {
+                        orderFeedback.textContent = 'An unexpected error occurred while placing your order. Please try again.';
+                        orderFeedback.className = 'feedback-error';
+                    }
+                } finally {
+                     if (currentOrder.length > 0 || !placeOrderBtn.disabled) { 
+                        placeOrderBtn.disabled = false;
+                        placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            });
+        }
+        
+        if(clearOrderBtn) clearOrderBtn.addEventListener('click', () => { 
+            console.log("Clear Order button clicked."); 
+            currentOrder = []; 
+            if(orderFeedback) {
+                orderFeedback.textContent = 'Order cleared.';
+                orderFeedback.className = 'feedback-error';
+                setTimeout(() => { if(orderFeedback) {orderFeedback.textContent = ''; orderFeedback.className = '';} }, 3000);
+            }
+            renderOrderSummary(); 
+        });
+
+        if(clearDetailsBtn) {
+            clearDetailsBtn.addEventListener('click', () => { 
+                if(customerNameInput) customerNameInput.value = '';
+                if(customerEmailInput) customerEmailInput.value = '';
+                if(customerMobileInput) customerMobileInput.value = '';
+                if(customerWhatsappInput) customerWhatsappInput.value = '';
+                if(customerAddressInput) customerAddressInput.value = '';
+                if(customerPincodeInput) customerPincodeInput.value = '';
+                
+                if(countrySelect) {
+                    countrySelect.value = 'India'; 
+                    populateStates(countrySelect.value); 
+                }
+                if(orderFeedback) {
+                    orderFeedback.textContent = 'Customer details cleared.';
+                    orderFeedback.className = 'feedback-info'; 
+                     setTimeout(() => { if(orderFeedback) {orderFeedback.textContent = ''; orderFeedback.className = '';} }, 3000);
+                }
+            });
+        }
+        
+        if(inquiryForm && contactFormFeedback) { 
+            inquiryForm.addEventListener('submit', async function(e) {
+                e.preventDefault(); 
+                contactFormFeedback.textContent = 'Submitting your inquiry...';
+                contactFormFeedback.className = 'feedback-info';
+                const submitButton = this.querySelector('button[type="submit"]');
+                if(submitButton) submitButton.disabled = true; 
+
+                const formData = new FormData(this); 
+                
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/inquiry/submit`, {
+                        method: 'POST',
+                        body: formData, 
+                    });
+                    const result = await response.json();
+
+                    if (response.ok) { 
+                        contactFormFeedback.textContent = result.message || "Inquiry submitted successfully!";
+                        contactFormFeedback.className = 'feedback-success';
+                        this.reset(); 
+                    } else { 
+                        contactFormFeedback.textContent = result.message || `Error: ${response.statusText || response.status}`;
+                        contactFormFeedback.className = 'feedback-error';
+                    }
+                } catch (error) { 
+                    console.error('Error submitting inquiry form:', error);
+                    contactFormFeedback.textContent = 'An unexpected error occurred. Please try again or contact us directly.';
+                    contactFormFeedback.className = 'feedback-error';
+                } finally {
+                     if(submitButton) submitButton.disabled = false; 
+                     setTimeout(() => {if(contactFormFeedback) {contactFormFeedback.textContent = ''; contactFormFeedback.className = '';}}, 7000); 
+                }
+            });
+        }
+
+        if(menuButton && mobileMenu) {
+            menuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        }
+        
+        const mobileNavLinks = Array.from(mobileMenu ? mobileMenu.querySelectorAll('a') : []);
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if(mobileMenu) mobileMenu.classList.add('hidden');
+            });
+        });
+        
+        if(currentYearEl) currentYearEl.textContent = new Date().getFullYear();
+
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('main section'); 
+        const header = document.querySelector('header');
+        let headerHeight = header ? header.offsetHeight : 70; 
+
+        window.addEventListener('resize', () => {
+            headerHeight = header ? header.offsetHeight : 70;
+        });
+        
+        /**
+         * Updates the active state of navigation links based on scroll position.
+         */
+        function updateActiveNavLink() { 
+            let currentSectionId = '';
+            const availableSections = document.querySelectorAll('main section'); 
+            availableSections.forEach(section => {
+                const sectionTop = section.offsetTop - headerHeight - 30; 
+                if (window.scrollY >= sectionTop) {
+                    currentSectionId = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('nav-link-active');
+                if (link.getAttribute('href') === `#${currentSectionId}`) {
+                    link.classList.add('nav-link-active');
+                }
+            });
+        }
+        
+        // Add event listener for the View Cart button
+        if (viewCartBtn) {
+            viewCartBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const orderReviewSection = document.getElementById('order-review');
+                if (orderReviewSection) {
+                    orderReviewSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        window.addEventListener('load', () => {
+            fetchAndDisplayCustomerProducts(); 
+            populateCountryCodeDropdowns();
+            populateCountries(); 
+            updateActiveNavLink(); 
+            renderOrderSummary(); 
+        });
+        window.addEventListener('scroll', updateActiveNavLink); 
+
+    </script>
+</body>
+</html>
