@@ -257,6 +257,9 @@
             background-position: center;
             background-repeat: no-repeat;
             position: relative; 
+            display: flex; /* Added for vertical centering of content */
+            align-items: center; /* Added for vertical centering */
+            /* min-height: 80vh; /* Example: 80% of viewport height, adjust as needed */
         }
         #home::before {
             content: "";
@@ -277,7 +280,7 @@
 </head>
 <body class="bg-zinc-900 text-zinc-200">
 
-    <header class="bg-zinc-800 shadow-lg sticky top-0 z-50">
+    <header class="bg-black shadow-lg sticky top-0 z-50">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <a href="#" class="text-2xl font-bold text-zinc-100 hover:text-white transition-colors">Gamma Ortho</a>
             <div class="space-x-2 hidden md:flex">
@@ -293,7 +296,7 @@
                 </button>
             </div>
         </nav>
-        <div id="mobile-menu" class="md:hidden hidden bg-zinc-800 shadow-xl">
+        <div id="mobile-menu" class="md:hidden hidden bg-black shadow-xl">
             <a href="#home" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">Home</a>
             <a href="#products" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">Products</a>
             <a href="#order-review" class="block nav-link text-zinc-300 hover:text-white hover:bg-zinc-700 px-6 py-3 transition-colors">Review Order</a>
@@ -303,7 +306,7 @@
     </header>
 
     <main>
-        <section id="home" class="text-white py-20 md:py-10">
+        <section id="home" class="text-white min-h-[calc(100vh-var(--header-height,72px))]">
             <div class="container mx-auto px-6 text-center"> 
                 <h1 class="text-5xl md:text-5xl font-bold mb-8 text-zinc-50">Gamma Orthopedic Instruments</h1>
                 <p class="text-xl md:text-1.5xl text-zinc-300 mb-10 max-w-3xl mx-auto">
@@ -315,7 +318,7 @@
             </div>
         </section>
 
-        <section id="products" class="py-20 md:py-28 bg-zinc-900">
+        <section id="products" class="py-20 md:py-10 bg-zinc-900">
             <div class="container mx-auto px-6">
                 <h2 class="text-4xl md:text-5xl font-bold text-center text-zinc-100 mb-16">Our Products</h2>
                 
@@ -1333,6 +1336,11 @@
 
         window.addEventListener('resize', () => {
             headerHeight = header ? header.offsetHeight : 70;
+            // Adjust home section min-height based on new header height
+            const homeSection = document.getElementById('home');
+            if (homeSection) {
+                 homeSection.style.minHeight = `calc(100vh - ${headerHeight}px)`;
+            }
         });
         
         /**
@@ -1368,6 +1376,17 @@
         }
 
         window.addEventListener('load', () => {
+            // Calculate header height dynamically and set CSS variable
+            if(header) {
+                headerHeight = header.offsetHeight;
+                document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
+                 // Adjust home section min-height based on header height
+                const homeSection = document.getElementById('home');
+                if (homeSection) {
+                    homeSection.style.minHeight = `calc(100vh - ${headerHeight}px)`;
+                }
+            }
+
             fetchAndDisplayCustomerProducts(); 
             populateCountryCodeDropdowns();
             populateCountries(); 
