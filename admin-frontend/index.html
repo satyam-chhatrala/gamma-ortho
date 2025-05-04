@@ -104,14 +104,14 @@
             border-color: #71717a; 
         }
         .btn-warning { 
-            background-color: transparent; /* Changed for edit button */
-            color: #e4e4e7; /* zinc-200 */
-            border: 1px solid #71717a; /* zinc-500 */
+            background-color: transparent; 
+            color: #e4e4e7; 
+            border: 1px solid #71717a; 
         }
         .btn-warning:hover { 
-            background-color: #27272a; /* zinc-800 */
-            border-color: #a1a1aa; /* zinc-400 */
-            color: #f4f4f5; /* zinc-100 */
+            background-color: #27272a; 
+            border-color: #a1a1aa; 
+            color: #f4f4f5; 
         }
         .btn-danger { 
             background-color: #b91c1c; 
@@ -142,11 +142,11 @@
         .image-preview-container { margin-top: 0.75rem; margin-bottom: 1rem; }
         .image-preview { max-width: 120px; max-height: 120px; margin-right: 0.75rem; border-radius: 0.375rem; border: 1px solid #52525b; }
         
-        /* Styles for admin product cards - adapted from customer site */
         .admin-product-card {
-            background-color: #27272a; /* zinc-800 */
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); /* shadow-lg */
+            background-color: #27272a; /* zinc-800 - Card background */
+            border: 1px solid #3f3f46; /* zinc-700 - Slightly lighter border for cards */
+            border-radius: 0.75rem; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); 
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -154,12 +154,12 @@
         }
         .admin-product-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); /* shadow-xl */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); 
         }
-        .admin-product-card-image-container { /* Container for image and arrows */
+        .admin-product-card-image-container { 
             position: relative;
             width: 100%; 
-            height: 12rem; /* 192px, adjust as needed for admin card */
+            height: 12rem; 
             background-color: #3f3f46; /* zinc-700 */
             border-bottom: 1px solid #52525b; /* zinc-600 */
         }
@@ -167,19 +167,19 @@
             width: 100%; 
             height: 100%; 
             object-fit: contain; 
-            padding: 0.5rem; /* Smaller padding for admin card image */
+            padding: 0.5rem; 
         }
-        .admin-carousel-arrow { /* Specific class for admin carousel arrows */
+        .admin-carousel-arrow { 
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background-color: rgba(24, 24, 27, 0.5); /* zinc-900 with opacity */
-            color: #f4f4f5; /* zinc-100 */
+            background-color: rgba(24, 24, 27, 0.5); 
+            color: #f4f4f5; 
             border: none;
             border-radius: 50%;
-            width: 2rem; /* 32px */
-            height: 2rem; /* 32px */
-            font-size: 1rem; /* text-base */
+            width: 2rem; 
+            height: 2rem; 
+            font-size: 1rem; 
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -188,21 +188,38 @@
             z-index: 10;
         }
         .admin-carousel-arrow:hover {
-            background-color: rgba(39, 39, 42, 0.7); /* zinc-800 with opacity */
+            background-color: rgba(39, 39, 42, 0.7); 
         }
         .admin-carousel-arrow.prev-arrow { left: 0.5rem; }
         .admin-carousel-arrow.next-arrow { right: 0.5rem; }
 
         .admin-product-card-content {
-            padding: 1rem; /* p-4 */
-            flex-grow: 1; /* Allow content to grow */
+            padding: 1rem; 
+            flex-grow: 1; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
-        .admin-product-card h4 { color: #f4f4f5; /* zinc-100 */ font-size: 1.125rem; /* text-lg */ margin-bottom: 0.25rem; }
-        .admin-product-card p { color: #a1a1aa; /* zinc-400 */ font-size: 0.875rem; /* text-sm */ margin-bottom: 0.25rem;}
+        .admin-product-card h4 { color: #f4f4f5; font-size: 1.125rem; margin-bottom: 0.25rem; }
+        .admin-product-card p { color: #a1a1aa; font-size: 0.875rem; margin-bottom: 0.25rem;}
         .admin-product-card .actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem; /* py-1 px-3 */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+            border-radius: 9999px; /* rounded-full */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-badge-active {
+            background-color: #22c55e; /* green-500 */
+            color: #f0fdf4; /* green-50 */
+        }
+        .status-badge-inactive {
+            background-color: #ef4444; /* red-500 */
+            color: #fef2f2; /* red-50 */
+        }
 
 
         #admin-product-filter-options-container { 
@@ -303,6 +320,7 @@
             <section class="list-section" id="existing-products-section">
                 <h3 class="text-2xl font-semibold mb-6 text-zinc-100">Listed Products</h3>
                 <div id="existing-products-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* This div will be populated by renderAdminProductList */}
                     <p class="text-center text-zinc-400 col-span-full">Loading products...</p>
                 </div>
             </section>
@@ -337,7 +355,7 @@
                     <div class="pt-2">
                         <label class="text-lg font-medium mb-3 text-zinc-200">Dimensions & Pricing (Base Price before GST)</label>
                         <div id="dimensions-container" class="space-y-3">
-                            {/* Dimension entries will be added here by JavaScript */}
+            
                         </div>
                         <button type="button" id="add-dimension-btn" class="btn btn-secondary btn-sm mt-3">
                             <i class="fas fa-plus mr-1"></i> Add Dimension
@@ -632,8 +650,8 @@
 
             productsToRender.forEach(product => {
                 const card = document.createElement('div');
-                card.className = 'admin-product-card flex flex-col'; 
-                card.dataset.productId = product._id; // For easier access if needed
+                card.className = 'admin-product-card'; // Uses new CSS class
+                card.dataset.productId = product._id;
 
                 const placeholderImage = `https://placehold.co/600x400/3f3f46/e4e4e7?text=${encodeURIComponent(product.name)}`;
                 const displayGstRate = (typeof product.gstRate === 'number' ? product.gstRate : GST_RATE_DEFAULT) * 100;
@@ -653,32 +671,32 @@
                 }
                 imageCarouselHTML += `</div>`;
                 
-                // Calculate initial price display based on the first dimension if available
                 let initialPriceText = "N/A";
                 if (product.dimensions && product.dimensions.length > 0 && product.dimensions[0].basePrice !== undefined) {
                     initialPriceText = parseFloat(product.dimensions[0].basePrice).toFixed(2);
                 }
 
+                const statusButtonClass = product.isActive ? 'status-badge-active' : 'status-badge-inactive';
+                const statusText = product.isActive ? 'Active' : 'Inactive';
 
                 card.innerHTML = `
-                    <div>
-                        ${imageCarouselHTML}
-                        <div class="admin-product-card-content p-4">
-                            <div>
-                                <h4 class="font-semibold text-lg text-zinc-100 mb-1 truncate" title="${product.name}">${product.name} 
-                                    <span class="text-xs font-normal ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span>
-                                </h4>
-                                <p class="text-sm text-zinc-400 mb-1">Type: ${product.productType}</p>
-                                <p class="text-sm text-zinc-400 mb-1">Dimensions: ${product.dimensions ? product.dimensions.length : 0}</p>
-                                <p class="text-sm text-zinc-300 font-medium">
-                                    Base Price: ${initialPriceText} Rs 
-                                    <span class="text-xs text-zinc-400">(+ ${displayGstRate.toFixed(0)}% GST)</span>
-                                </p>
+                    ${imageCarouselHTML}
+                    <div class="admin-product-card-content">
+                        <div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="font-semibold text-lg text-zinc-100 truncate" title="${product.name}">${product.name}</h4>
+                                <span class="status-badge ${statusButtonClass}">${statusText}</span>
                             </div>
-                            <div class="actions mt-4">
-                                <button class="btn btn-warning btn-sm edit-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-edit mr-1"></i> Edit</button>
-                                <button class="btn btn-danger btn-sm delete-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-trash mr-1"></i> Delete</button>
-                            </div>
+                            <p class="text-sm text-zinc-400 mb-1">Type: ${product.productType}</p>
+                            <p class="text-sm text-zinc-400 mb-1">Dimensions: ${product.dimensions ? product.dimensions.length : 0}</p>
+                            <p class="text-sm text-zinc-300 font-medium">
+                                Base Price: ${initialPriceText} Rs 
+                                <span class="text-xs text-zinc-400">(+ ${displayGstRate.toFixed(0)}% GST)</span>
+                            </p>
+                        </div>
+                        <div class="actions mt-4">
+                            <button class="btn btn-warning btn-sm edit-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-edit mr-1"></i> Edit</button>
+                            <button class="btn btn-danger btn-sm delete-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-trash mr-1"></i> Delete</button>
                         </div>
                     </div>
                 `;
@@ -697,7 +715,7 @@
                     }
 
                     if(prevArrow) prevArrow.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent card click or other parent events
+                        e.stopPropagation(); 
                         currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
                         updateAdminImage();
                     });
