@@ -104,14 +104,14 @@
             border-color: #71717a; 
         }
         .btn-warning { 
-            background-color: transparent;
-            color: #e4e4e7; 
-            border: 1px solid #71717a; 
+            background-color: transparent; /* Changed for edit button */
+            color: #e4e4e7; /* zinc-200 */
+            border: 1px solid #71717a; /* zinc-500 */
         }
         .btn-warning:hover { 
-            background-color: #27272a; 
-            border-color: #a1a1aa; 
-            color: #f4f4f5; 
+            background-color: #27272a; /* zinc-800 */
+            border-color: #a1a1aa; /* zinc-400 */
+            color: #f4f4f5; /* zinc-100 */
         }
         .btn-danger { 
             background-color: #b91c1c; 
@@ -142,27 +142,67 @@
         .image-preview-container { margin-top: 0.75rem; margin-bottom: 1rem; }
         .image-preview { max-width: 120px; max-height: 120px; margin-right: 0.75rem; border-radius: 0.375rem; border: 1px solid #52525b; }
         
-        /* Styles for admin product cards */
+        /* Styles for admin product cards - adapted from customer site */
         .admin-product-card {
+            background-color: #27272a; /* zinc-800 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); /* shadow-lg */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .admin-product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); /* shadow-xl */
+        }
+        .admin-product-card-image-container { /* Container for image and arrows */
+            position: relative;
+            width: 100%; 
+            height: 12rem; /* 192px, adjust as needed for admin card */
             background-color: #3f3f46; /* zinc-700 */
-            border: 1px solid #52525b; /* zinc-600 */
-            border-radius: 0.5rem; /* rounded-lg */
+            border-bottom: 1px solid #52525b; /* zinc-600 */
+        }
+        .admin-product-card-image { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            padding: 0.5rem; /* Smaller padding for admin card image */
+        }
+        .admin-carousel-arrow { /* Specific class for admin carousel arrows */
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(24, 24, 27, 0.5); /* zinc-900 with opacity */
+            color: #f4f4f5; /* zinc-100 */
+            border: none;
+            border-radius: 50%;
+            width: 2rem; /* 32px */
+            height: 2rem; /* 32px */
+            font-size: 1rem; /* text-base */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        .admin-carousel-arrow:hover {
+            background-color: rgba(39, 39, 42, 0.7); /* zinc-800 with opacity */
+        }
+        .admin-carousel-arrow.prev-arrow { left: 0.5rem; }
+        .admin-carousel-arrow.next-arrow { right: 0.5rem; }
+
+        .admin-product-card-content {
             padding: 1rem; /* p-4 */
+            flex-grow: 1; /* Allow content to grow */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
-        .admin-product-card-image {
-            width: 100%;
-            height: 10rem; /* 160px */
-            object-fit: contain;
-            background-color: #27272a; /* zinc-800 */
-            border-radius: 0.375rem; /* rounded-md */
-            margin-bottom: 0.75rem;
-        }
-        .admin-product-card h4 { color: #f4f4f5; /* zinc-100 */ }
-        .admin-product-card p { color: #a1a1aa; /* zinc-400 */ font-size: 0.875rem; /* text-sm */ }
-        .admin-product-card .actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;}
+        .admin-product-card h4 { color: #f4f4f5; /* zinc-100 */ font-size: 1.125rem; /* text-lg */ margin-bottom: 0.25rem; }
+        .admin-product-card p { color: #a1a1aa; /* zinc-400 */ font-size: 0.875rem; /* text-sm */ margin-bottom: 0.25rem;}
+        .admin-product-card .actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; }
 
 
         #admin-product-filter-options-container { 
@@ -587,49 +627,86 @@
                 return;
             }
 
-            // Ensure the container is a grid
             productListDiv.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'; 
-            productListDiv.innerHTML = ''; // Clear previous content or "Loading..." message
+            productListDiv.innerHTML = ''; 
 
             productsToRender.forEach(product => {
                 const card = document.createElement('div');
-                card.className = 'admin-product-card flex flex-col'; // Added flex flex-col
+                card.className = 'admin-product-card flex flex-col'; 
+                card.dataset.productId = product._id; // For easier access if needed
 
-                let imageHTML = product.baseImageURL 
-                    ? `<img src="${product.baseImageURL}" alt="${product.name}" class="admin-product-card-image">` 
-                    : '<div class="admin-product-card-image flex items-center justify-center bg-zinc-800"><span class="text-xs text-zinc-500">No base image</span></div>';
+                const placeholderImage = `https://placehold.co/600x400/3f3f46/e4e4e7?text=${encodeURIComponent(product.name)}`;
+                const displayGstRate = (typeof product.gstRate === 'number' ? product.gstRate : GST_RATE_DEFAULT) * 100;
+
+                const allImages = [product.baseImageURL, ...(product.additionalImageURLs || [])].filter(url => url && typeof url === 'string' && url.trim() !== '');
+                const initialImageSrc = allImages.length > 0 ? allImages[0] : placeholderImage;
+
+                let imageCarouselHTML = `
+                    <div class="admin-product-card-image-container">
+                        <img src="${initialImageSrc}" alt="${product.name}" class="admin-product-card-image admin-product-image-${product._id}" onerror="this.onerror=null; this.src='${placeholderImage}';">
+                `;
+                if (allImages.length > 1) {
+                    imageCarouselHTML += `
+                        <button class="admin-carousel-arrow prev-arrow" data-product-id="${product._id}" data-direction="-1"><i class="fas fa-chevron-left"></i></button>
+                        <button class="admin-carousel-arrow next-arrow" data-product-id="${product._id}" data-direction="1"><i class="fas fa-chevron-right"></i></button>
+                    `;
+                }
+                imageCarouselHTML += `</div>`;
                 
-                // Show a few additional image thumbnails if they exist
-                let additionalImagesHTML = '';
-                if (product.additionalImageURLs && product.additionalImageURLs.length > 0) {
-                    additionalImagesHTML += '<div class="mt-2 flex space-x-1 overflow-x-auto">';
-                    product.additionalImageURLs.slice(0, 3).forEach(url => { // Show max 3 thumbnails
-                        additionalImagesHTML += `<img src="${url}" alt="Add. Image" class="h-10 w-10 object-cover rounded border border-zinc-600">`;
-                    });
-                    if (product.additionalImageURLs.length > 3) {
-                        additionalImagesHTML += `<span class="text-xs text-zinc-500 self-center ml-1">+${product.additionalImageURLs.length - 3}</span>`;
-                    }
-                    additionalImagesHTML += '</div>';
+                // Calculate initial price display based on the first dimension if available
+                let initialPriceText = "N/A";
+                if (product.dimensions && product.dimensions.length > 0 && product.dimensions[0].basePrice !== undefined) {
+                    initialPriceText = parseFloat(product.dimensions[0].basePrice).toFixed(2);
                 }
 
 
                 card.innerHTML = `
-                    <div> ${// Content wrapper
-                        imageHTML
-                    }
-                        <h4 class="font-semibold text-lg text-zinc-100 mt-2 truncate" title="${product.name}">${product.name} 
-                            <span class="text-xs font-normal ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span>
-                        </h4>
-                        <p class="text-sm text-zinc-400">Type: ${product.productType}</p>
-                        <p class="text-sm text-zinc-400">${product.dimensions ? product.dimensions.length : 0} dimension(s)</p>
-                        ${additionalImagesHTML}
-                    </div>
-                    <div class="actions mt-auto pt-3"> {/* mt-auto to push actions to bottom, pt-3 for spacing */}
-                        <button class="btn btn-warning btn-sm edit-product-btn" data-id="${product._id}"><i class="fas fa-edit"></i> Edit</button>
-                        <button class="btn btn-danger btn-sm delete-product-btn" data-id="${product._id}"><i class="fas fa-trash"></i> Delete</button>
+                    <div>
+                        ${imageCarouselHTML}
+                        <div class="admin-product-card-content p-4"> {/* Moved p-4 here */}
+                            <div>
+                                <h4 class="font-semibold text-lg text-zinc-100 mb-1 truncate" title="${product.name}">${product.name} 
+                                    <span class="text-xs font-normal ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span>
+                                </h4>
+                                <p class="text-sm text-zinc-400 mb-1">Type: ${product.productType}</p>
+                                <p class="text-sm text-zinc-400 mb-1">Dimensions: ${product.dimensions ? product.dimensions.length : 0}</p>
+                                <p class="text-sm text-zinc-300 font-medium">
+                                    Base Price: ${initialPriceText} Rs 
+                                    <span class="text-xs text-zinc-400">(+ ${displayGstRate.toFixed(0)}% GST)</span>
+                                </p>
+                            </div>
+                            <div class="actions mt-4"> {/* Ensure actions are at the bottom */}
+                                <button class="btn btn-warning btn-sm edit-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-edit mr-1"></i> Edit</button>
+                                <button class="btn btn-danger btn-sm delete-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-trash mr-1"></i> Delete</button>
+                            </div>
+                        </div>
                     </div>
                 `;
                 productListDiv.appendChild(card);
+
+                // Image Carousel Logic for Admin Cards
+                if (allImages.length > 1) {
+                    let currentImageIndex = 0;
+                    const imgElement = card.querySelector(`.admin-product-image-${product._id}`);
+                    const prevArrow = card.querySelector('.prev-arrow');
+                    const nextArrow = card.querySelector('.next-arrow');
+
+                    function updateAdminImage() {
+                        if(imgElement) imgElement.src = allImages[currentImageIndex];
+                        if(imgElement) imgElement.alt = `${product.name} - Image ${currentImageIndex + 1}`;
+                    }
+
+                    if(prevArrow) prevArrow.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent card click or other parent events
+                        currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+                        updateAdminImage();
+                    });
+                    if(nextArrow) nextArrow.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        currentImageIndex = (currentImageIndex + 1) % allImages.length;
+                        updateAdminImage();
+                    });
+                }
             });
 
             document.querySelectorAll('.edit-product-btn').forEach(button => {
@@ -705,7 +782,7 @@
 
 
         async function fetchAndDisplayProducts() {
-            existingProductsList.innerHTML = '<p class="text-center text-zinc-400 col-span-full">Loading products...</p>'; // Ensure col-span-full if it's a grid initially
+            existingProductsList.innerHTML = '<p class="text-center text-zinc-400 col-span-full">Loading products...</p>'; 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/admin/products`);
                 if (!response.ok) {
@@ -804,7 +881,7 @@
             const productId = event.currentTarget.dataset.id;
             const productName = event.currentTarget.closest('.admin-product-card') ? 
                                 event.currentTarget.closest('.admin-product-card').querySelector('h4').firstChild.textContent.trim() : 
-                                'this product'; // Fallback if structure changes
+                                'this product'; 
             
             if (!confirm(`Are you sure you want to delete the product "${productName}"?`)) {
                 return;
