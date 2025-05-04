@@ -1,4 +1,4 @@
-```yaml
+
   # Optional: Specify global logging option for the build
   # This directly addresses the error you encountered.
   options:
@@ -39,7 +39,7 @@
   # You can also define your own substitutions.
   # substitutions:
   #   _MY_VARIABLE: "my-value"
-  ```
+  
 * **Important:**
     * Replace `YOUR_CHOSEN_REGION` with the GCP region you chose for Artifact Registry (e.g., `us-central1`).
     * Replace `YOUR_PROJECT_ID` with your actual Google Cloud Project ID.
