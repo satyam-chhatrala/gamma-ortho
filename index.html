@@ -125,13 +125,14 @@
             margin-bottom: 1.5rem; 
             padding: 1.5rem; 
             background-color: #27272a; 
-            border-radius: 0.75rem; 
+            border-radius: 0.5rem; 
+            border: 1px solid #3f3f46; 
         }
         #product-filter-options-container h3 {
-            font-size: 1.25rem; 
+            font-size: 1.125rem; 
             font-weight: 600; 
-            color: #f4f4f5; 
-            margin-bottom: 1rem; 
+            color: #e4e4e7; 
+            margin-bottom: 0.75rem; 
         }
         .product-filter-options {
             display: flex;
@@ -145,11 +146,12 @@
             background-color: #3f3f46; 
             color: #d4d4d8; 
             border-radius: 0.5rem; 
+            border: 1px solid #52525b; 
             cursor: pointer;
             transition: background-color 0.2s, color 0.2s;
         }
         .product-filter-options label:hover, 
-        .product-filter-options input[type="checkbox"]:checked + span { /* Style span when checkbox is checked */
+        .product-filter-options input[type="checkbox"]:checked + span { 
             background-color: #52525b; 
             color: #f4f4f5; 
         }
@@ -160,11 +162,12 @@
             height: 1px;
         }
         #filter-toggle-button { 
-            padding: 0.75rem; 
+            padding: 0.85rem; 
             background-color: #3f3f46; 
             border: 1px solid #52525b; 
             border-radius: 0.5rem; 
             transition: background-color 0.2s;
+            color: #e4e4e7; 
         }
         #filter-toggle-button:hover {
             background-color: #52525b; 
@@ -184,7 +187,7 @@
         .product-card-image-container { 
             position: relative;
             width: 100%; 
-            height: 20rem; 
+            /* height: 20rem; /* Replaced by responsive classes in HTML */
             background-color: #3f3f46; 
             border-bottom: 1px solid #52525b; 
             overflow: hidden; 
@@ -228,7 +231,7 @@
             padding: 0.85rem 1.75rem; 
             border-radius: 0.5rem; 
             font-weight: 600; 
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s, color 0.2s;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s, color 0.2s, border-color 0.2s;
             text-align: center;
             display: inline-flex;
             align-items: center;
@@ -408,7 +411,6 @@
                         <i class="fas fa-filter text-xl"></i>
                     </button>
                     <input type="text" id="product-search-input" placeholder="Search products by name or type" class="input-base-style text-lg">
-                    
                 </div>
 
                 <div id="product-filter-options-container" class="product-filter-container max-w-4xl mx-auto hidden">
@@ -797,8 +799,9 @@
                 const allImages = [product.baseImageURL, ...(product.additionalImageURLs || [])].filter(url => url && typeof url === 'string' && url.trim() !== '');
                 const initialImageSrc = allImages.length > 0 ? allImages[0] : placeholderImage;
                 
+                // Responsive image container height
                 let imageCarouselHTML = `
-                    <div class="product-card-image-container">
+                    <div class="product-card-image-container h-64 md:h-80"> {/* Responsive height */}
                         <img src="${initialImageSrc}" alt="${product.name}" class="product-card-image product-image-${product._id}" onerror="this.onerror=null; this.src='${placeholderImage}';">
                 `;
                 if (allImages.length > 1) {
@@ -809,7 +812,7 @@
                 }
                 imageCarouselHTML += `</div>`;
 
-
+                // Responsive Qty and Add to Cart layout
                 card.innerHTML = `
                     ${imageCarouselHTML}
                     <div class="p-5 md:p-6">
@@ -819,10 +822,12 @@
                             <label for="dim-${product._id}" class="block text-sm font-medium text-zinc-300 mb-1">Select Dimension:</label>
                             <select id="dim-${product._id}" class="dimension-select"></select>
                         </div>
-                        <div class="flex items-center space-x-3">
-                            <label for="qty-${product._id}" class="text-sm text-zinc-300">Qty:</label>
-                            <input type="number" id="qty-${product._id}" min="1" value="1" class="product-quantity-input">
-                            <button class="add-to-order-btn btn-premium btn-premium-secondary text-sm flex-grow">
+                        <div class="flex flex-col md:flex-row md:items-center md:space-x-3 space-y-3 md:space-y-0">
+                            <div class="flex items-center space-x-2 w-full md:w-auto">
+                                <label for="qty-${product._id}" class="text-sm text-zinc-300">Qty:</label>
+                                <input type="number" id="qty-${product._id}" min="1" value="1" class="product-quantity-input">
+                            </div>
+                            <button class="add-to-order-btn btn-premium btn-premium-secondary text-sm w-full md:flex-grow">
                                 <i class="fas fa-cart-plus mr-2"></i> Add to Cart
                             </button>
                         </div>
