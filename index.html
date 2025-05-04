@@ -423,7 +423,7 @@
                     </div>
                 </div>
                 
-                <div id="product-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                <div id="product-list-container" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-x-4 sm:gap-x-6 md:gap-x-8 gap-y-8 sm:gap-y-10 md:gap-y-12">
                     <p id="products-loading-message" class="text-center text-zinc-400 col-span-full text-lg">Loading products...</p>
                     {/* Product cards will be dynamically inserted here by JavaScript */}
                 </div>
@@ -462,13 +462,13 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                             <div>
                                 <div class="flex">
-                                    <select id="customer-mobile-code" class="country-code-select mr-2 w-34"></select> 
+                                    <select id="customer-mobile-code" class="country-code-select mr-2 w-32"></select> 
                                     <input type="tel" id="customer-mobile" class="input-base-style flex-grow" placeholder="Mobile No. *" required>
                                 </div>
                             </div>
                             <div>
                                  <div class="flex">
-                                    <select id="customer-whatsapp-code" class="country-code-select mr-2 w-34"></select> 
+                                    <select id="customer-whatsapp-code" class="country-code-select mr-2 w-32"></select> 
                                     <input type="tel" id="customer-whatsapp" class="input-base-style flex-grow" placeholder="WhatsApp No.">
                                 </div>
                             </div>
@@ -594,7 +594,7 @@
         </div>
     </footer>
     
-    <button id="floating-view-cart-btn" class="btn-premium btn-premium-primary" style="display: none;"> {/* Initially hidden */}
+    <button id="floating-view-cart-btn" class="btn-premium btn-premium-primary" style="display: none;"> 
         <i class="fas fa-shopping-cart"></i>
         <span class="cart-text">View Cart</span>
         <span id="cart-item-count-badge" class="cart-item-count-badge" style="display: none;">0</span>
@@ -700,8 +700,8 @@
         const customerPincodeInput = document.getElementById('customer-pincode');
         const contactFormMobileCodeInput = document.getElementById('contact-form-mobile-code');
         const contactFormWhatsappCodeInput = document.getElementById('contact-form-whatsapp-code');
-        const floatingViewCartBtn = document.getElementById('floating-view-cart-btn'); // New FAB
-        const cartItemCountBadge = document.getElementById('cart-item-count-badge'); // New Badge for FAB
+        const floatingViewCartBtn = document.getElementById('floating-view-cart-btn'); 
+        const cartItemCountBadge = document.getElementById('cart-item-count-badge'); 
 
 
         /**
@@ -1125,7 +1125,7 @@
             }
             orderItemsContainer.innerHTML = ''; 
             
-            let totalItemsInCart = 0; // For the FAB badge
+            let totalItemsInCart = 0; 
 
             if (currentOrder.length === 0) {
                 orderItemsContainer.innerHTML = '<p class="text-zinc-400 text-center py-4">Your order is currently empty. Add products to get started!</p>';
@@ -1136,7 +1136,7 @@
                 placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 clearOrderBtn.disabled = true; 
                 clearOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                if(floatingViewCartBtn) floatingViewCartBtn.style.display = 'none'; // Hide FAB
+                if(floatingViewCartBtn) floatingViewCartBtn.style.display = 'none'; 
                 if(cartItemCountBadge) cartItemCountBadge.style.display = 'none';
                 return;
             }
@@ -1144,7 +1144,7 @@
             placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             clearOrderBtn.disabled = false; 
             clearOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            if(floatingViewCartBtn) floatingViewCartBtn.style.display = 'flex'; // Show FAB
+            if(floatingViewCartBtn) floatingViewCartBtn.style.display = 'flex'; 
             
             let subtotalWithoutGst = 0;
             let totalTax = 0;
@@ -1154,10 +1154,10 @@
             mainUl.className = 'space-y-6'; 
 
             currentOrder.forEach(productGroup => {
-                productGroup.variants.forEach(variant => { // Iterate through variants to sum quantities
+                productGroup.variants.forEach(variant => { 
                     totalItemsInCart += variant.quantity;
 
-                    const variantLi = document.createElement('li'); // Create li for each variant inside its group
+                    const variantLi = document.createElement('li'); 
                     variantLi.className = 'order-variant-item flex justify-between items-start text-sm'; 
                     
                     const baseSubtotalForVariant = variant.basePrice * variant.quantity;
@@ -1183,7 +1183,7 @@
                             </button>
                         </div>
                     `;
-                     mainUl.appendChild(variantLi); // Append variant directly to the main list
+                     mainUl.appendChild(variantLi); 
                 });
             });
 
@@ -1192,7 +1192,6 @@
             orderTotalTaxElement.textContent = `${totalTax.toFixed(2)} Rs`;
             orderFinalTotalElement.textContent = `${grandTotal.toFixed(2)} Rs`; 
 
-            // Update FAB badge
             if (cartItemCountBadge) {
                 if (totalItemsInCart > 0) {
                     cartItemCountBadge.textContent = totalItemsInCart;
@@ -1513,7 +1512,7 @@
             });
         }
         
-        if (floatingViewCartBtn) { // Check if the FAB exists
+        if (floatingViewCartBtn) { 
             floatingViewCartBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const orderReviewSection = document.getElementById('order-review');
