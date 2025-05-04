@@ -99,7 +99,7 @@
         
         .product-price-display { 
             font-weight: 700; 
-            font-size: 1.125rem; 
+            font-size: 1.00rem; 
             color: #f4f4f5; 
             margin-bottom: 0.75rem; 
         }
@@ -817,7 +817,7 @@
                     ${imageCarouselHTML}
                     <div class="p-5 md:p-6">
                         <h3 class="text-xl font-semibold text-zinc-100 mb-2 product-name truncate" title="${product.name}">${product.name}</h3>
-                        <p class="product-price-display">Price: <span id="price-display-${product._id}">${initialBasePrice}</span> Rs + <span class="gst-rate-text">${displayGstRate.toFixed(0)}</span>% GST</p>
+                        <p class="product-price-display"><span id="price-display-${product._id}">${initialBasePrice}</span> Rs + <span class="gst-rate-text">${displayGstRate.toFixed(0)}</span>% GST</p>
                         <div class="mb-4">
                             <label for="dim-${product._id}" class="block text-sm font-medium text-zinc-300 mb-1">Select Dimension:</label>
                             <select id="dim-${product._id}" class="dimension-select"></select>
