@@ -10,6 +10,7 @@ const inquiryRoutes = require('./routes/inquiryRoutes');
 const adminProductRoutes = require('./routes/adminProductRoutes'); 
 const publicProductRoutes = require('./routes/publicProductRoutes'); // For customer-facing product listings
 
+const host = '0.0.0.0';
 const port = process.env.PORT || 3001; 
 const SENDER_EMAIL_USER = process.env.SENDER_EMAIL_USER; 
 const SENDER_EMAIL_PASS = process.env.SENDER_EMAIL_PASS; 
@@ -125,6 +126,6 @@ app.get('/api/test', (req, res) => {
 });
 
 // --- Start the Server ---
-app.listen(port, () => {
+app.listen(port, host, () => {
   console.log(`${COMPANY_NAME} backend server running on http://localhost:${port} (or Render assigned port)`);
 });
