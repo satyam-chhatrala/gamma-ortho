@@ -801,7 +801,7 @@
                 
                 // Responsive image container height
                 let imageCarouselHTML = `
-                    <div class="product-card-image-container h-64 md:h-80"> {/* Responsive height */}
+                    <div class="product-card-image-container h-64 md:h-80">
                         <img src="${initialImageSrc}" alt="${product.name}" class="product-card-image product-image-${product._id}" onerror="this.onerror=null; this.src='${placeholderImage}';">
                 `;
                 if (allImages.length > 1) {
