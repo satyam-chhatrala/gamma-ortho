@@ -148,7 +148,8 @@
             cursor: pointer;
             transition: background-color 0.2s, color 0.2s;
         }
-        .product-filter-options label:hover, .product-filter-options input[type="checkbox"]:checked + span {
+        .product-filter-options label:hover, 
+        .product-filter-options input[type="checkbox"]:checked + span { /* Style span when checkbox is checked */
             background-color: #52525b; 
             color: #f4f4f5; 
         }
@@ -180,14 +181,48 @@
         .feedback-info { background-color: #3f3f46; color: #60a5fa; } 
 
 
-        .product-card-image { 
+        .product-card-image-container { 
+            position: relative;
             width: 100%; 
             height: 20rem; 
-            object-fit: contain; 
-            padding: 1rem; 
             background-color: #3f3f46; 
             border-bottom: 1px solid #52525b; 
+            overflow: hidden; 
         }
+        .product-card-image { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            padding: 1rem; 
+        }
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(24, 24, 27, 0.6); 
+            color: #f4f4f5; 
+            border: none;
+            border-radius: 50%;
+            width: 2.5rem; 
+            height: 2.5rem; 
+            font-size: 1.25rem; 
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        .carousel-arrow:hover {
+            background-color: rgba(39, 39, 42, 0.8); 
+        }
+        .carousel-arrow.prev-arrow {
+            left: 0.5rem; 
+        }
+        .carousel-arrow.next-arrow {
+            right: 0.5rem; 
+        }
+
 
         .btn-premium {
             padding: 0.85rem 1.75rem; 
@@ -205,25 +240,25 @@
             transform: translateY(-2px); 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
-        .btn-premium-primary { /* This is our "white" button */
-            background-color: #f4f4f5; /* zinc-100 */
-            color: #18181b; /* zinc-900 */
+        .btn-premium-primary { 
+            background-color: #f4f4f5; 
+            color: #18181b; 
             border-color: #f4f4f5;
         }
         .btn-premium-primary:hover {
-            background-color: #e4e4e7; /* zinc-200 */
+            background-color: #e4e4e7; 
             border-color: #e4e4e7;
         }
-        .btn-premium-secondary { /* This is our "grey" button */
-            background-color: #3f3f46; /* zinc-700 */
-            color: #f4f4f5; /* zinc-100 */
-            border-color: #52525b; /* zinc-600 */
+        .btn-premium-secondary { 
+            background-color: #3f3f46; 
+            color: #f4f4f5; 
+            border-color: #52525b; 
         }
         .btn-premium-secondary:hover {
-            background-color: #52525b; /* zinc-600 */
-            border-color: #71717a; /* zinc-500 */
+            background-color: #52525b; 
+            border-color: #71717a; 
         }
-         .btn-premium-warning { /* Retained for "Clear Order" if a more distinct warning is needed, but currently overridden */
+         .btn-premium-warning {
             background-color: transparent;
             color: #e4e4e7; 
             border: 1px solid #71717a; 
@@ -233,14 +268,14 @@
             border-color: #a1a1aa; 
             color: #f4f4f5; 
         }
-         .btn-premium-success { /* This was the previous "Place Order" style, now used as a general success/primary style if needed elsewhere */
+         .btn-premium-success { 
             background-color: #e4e4e7; 
             color: #18181b; 
         }
         .btn-premium-success:hover {
             background-color: #f4f4f5; 
         }
-         .btn-premium-orange { /* Retained for "Clear Details" if a more distinct style is needed, but currently overridden */
+         .btn-premium-orange { 
             background-color: #3f3f46; 
             color: #e4e4e7; 
             border: 1px solid #52525b; 
@@ -257,9 +292,8 @@
             background-position: center;
             background-repeat: no-repeat;
             position: relative; 
-            display: flex; /* Added for vertical centering of content */
-            align-items: center; /* Added for vertical centering */
-            /* min-height: 80vh; /* Example: 80% of viewport height, adjust as needed */
+            display: flex; 
+            align-items: center; 
         }
         #home::before {
             content: "";
@@ -268,11 +302,58 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(24, 24, 27, 0.6); /* zinc-900 with 60% opacity for better text contrast */
+            background-color: rgba(24, 24, 27, 0.6); 
         }
         #home > .container {
             position: relative;
             z-index: 1;
+        }
+
+        /* Floating Action Button (FAB) for View Cart */
+        #floating-view-cart-btn {
+            position: fixed;
+            bottom: 1.5rem; /* 24px */
+            right: 1.5rem; /* 24px */
+            z-index: 1000;
+            padding: 0.75rem; /* p-3 for a more compact FAB */
+            border-radius: 50%; /* Circular button */
+            width: 3.5rem; /* 56px */
+            height: 3.5rem; /* 56px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #floating-view-cart-btn .cart-text {
+            display: none; /* Hide text by default, show on larger screens if desired */
+        }
+        @media (min-width: 640px) { /* sm breakpoint */
+            #floating-view-cart-btn {
+                padding: 0.85rem 1.75rem;
+                border-radius: 0.5rem; /* Revert to standard button radius */
+                width: auto;
+                height: auto;
+            }
+            #floating-view-cart-btn .cart-text {
+                display: inline;
+                margin-left: 0.5rem;
+            }
+        }
+        .cart-item-count-badge {
+            position: absolute;
+            top: -0.5rem;    /* Adjust for positioning */
+            right: -0.5rem;  /* Adjust for positioning */
+            background-color: #dc2626; /* red-600 */
+            color: white;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: bold;
+            border-radius: 50%;
+            width: 1.5rem; /* 24px */
+            height: 1.5rem; /* 24px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1; /* Ensure number is centered */
+            border: 2px solid #18181b; /* Match body background for a "cutout" effect */
         }
 
 
@@ -307,7 +388,7 @@
 
     <main>
         <section id="home" class="text-white min-h-[calc(100vh-var(--header-height,72px))]">
-            <div class="container mx-auto px-6 text-center"> 
+            <div class="container mx-auto px-6 text-center transform -translate-y-12">
                 <h1 class="text-5xl md:text-5xl font-bold mb-8 text-zinc-50">Gamma Orthopedic Instruments</h1>
                 <p class="text-xl md:text-1.5xl text-zinc-300 mb-10 max-w-3xl mx-auto">
                     Precision-engineered instruments for optimal surgical outcomes. Explore our innovative solutions.
@@ -327,9 +408,7 @@
                         <i class="fas fa-filter text-xl"></i>
                     </button>
                     <input type="text" id="product-search-input" placeholder="Search products by name or type" class="input-base-style text-lg">
-                    <button id="view-cart-btn" class="btn-premium btn-premium-secondary ml-auto flex-shrink-0">
-                        <i class="fas fa-shopping-cart mr-2"></i> View Cart
-                    </button>
+                    
                 </div>
 
                 <div id="product-filter-options-container" class="product-filter-container max-w-4xl mx-auto hidden">
@@ -383,13 +462,13 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                             <div>
                                 <div class="flex">
-                                    <select id="customer-mobile-code" class="country-code-select mr-2 w-32"></select> 
+                                    <select id="customer-mobile-code" class="country-code-select mr-2 w-34"></select> 
                                     <input type="tel" id="customer-mobile" class="input-base-style flex-grow" placeholder="Mobile No. *" required>
                                 </div>
                             </div>
                             <div>
                                  <div class="flex">
-                                    <select id="customer-whatsapp-code" class="country-code-select mr-2 w-32"></select> 
+                                    <select id="customer-whatsapp-code" class="country-code-select mr-2 w-34"></select> 
                                     <input type="tel" id="customer-whatsapp" class="input-base-style flex-grow" placeholder="WhatsApp No.">
                                 </div>
                             </div>
@@ -514,6 +593,13 @@
             <p class="text-sm mt-2">Designed with precision for the medical community.</p>
         </div>
     </footer>
+    
+    <button id="floating-view-cart-btn" class="btn-premium btn-premium-primary" style="display: none;"> {/* Initially hidden */}
+        <i class="fas fa-shopping-cart"></i>
+        <span class="cart-text">View Cart</span>
+        <span id="cart-item-count-badge" class="cart-item-count-badge" style="display: none;">0</span>
+    </button>
+
 
     <script>
         // Global constants for GST rate and backend API URL
@@ -614,7 +700,8 @@
         const customerPincodeInput = document.getElementById('customer-pincode');
         const contactFormMobileCodeInput = document.getElementById('contact-form-mobile-code');
         const contactFormWhatsappCodeInput = document.getElementById('contact-form-whatsapp-code');
-        const viewCartBtn = document.getElementById('view-cart-btn'); 
+        const floatingViewCartBtn = document.getElementById('floating-view-cart-btn'); // New FAB
+        const cartItemCountBadge = document.getElementById('cart-item-count-badge'); // New Badge for FAB
 
 
         /**
@@ -627,6 +714,7 @@
             const selectElement = cardElement.querySelector(`#dim-${productId}`);
             const priceDisplayElement = cardElement.querySelector(`#price-display-${productId}`);
             const gstRateTextElements = cardElement.querySelectorAll('.gst-rate-text'); 
+            const addToCartBtn = cardElement.querySelector('.add-to-order-btn'); 
 
             if (!selectElement || !priceDisplayElement) {
                 console.warn(`Missing select or price display for product ${productId} on card.`);
@@ -665,6 +753,13 @@
                 const selectedOption = this.options[this.selectedIndex];
                 const basePrice = parseFloat(selectedOption.dataset.basePrice);
                 priceDisplayElement.textContent = basePrice.toFixed(2);
+
+                if (addToCartBtn && addToCartBtn.classList.contains('btn-added')) {
+                    addToCartBtn.innerHTML = `<i class="fas fa-cart-plus mr-2"></i> Add to Cart`;
+                    addToCartBtn.classList.remove('btn-premium-success', 'btn-added');
+                    addToCartBtn.classList.add('btn-premium-secondary'); 
+                    delete addToCartBtn.dataset.addedForDimension;
+                }
             });
         }
         
@@ -696,11 +791,27 @@
                     initialBasePrice = parseFloat(product.dimensions[0].basePrice).toFixed(2);
                 }
                 
-                const placeholderImage = `https://placehold.co/600x400/3f3f46/e4e4e7?text=${encodeURIComponent(product.name)}`; // zinc-700/zinc-200
+                const placeholderImage = `https://placehold.co/600x400/3f3f46/e4e4e7?text=${encodeURIComponent(product.name)}`;
                 const displayGstRate = (typeof product.gstRate === 'number' ? product.gstRate : GST_RATE) * 100;
 
+                const allImages = [product.baseImageURL, ...(product.additionalImageURLs || [])].filter(url => url && typeof url === 'string' && url.trim() !== '');
+                const initialImageSrc = allImages.length > 0 ? allImages[0] : placeholderImage;
+                
+                let imageCarouselHTML = `
+                    <div class="product-card-image-container">
+                        <img src="${initialImageSrc}" alt="${product.name}" class="product-card-image product-image-${product._id}" onerror="this.onerror=null; this.src='${placeholderImage}';">
+                `;
+                if (allImages.length > 1) {
+                    imageCarouselHTML += `
+                        <button class="carousel-arrow prev-arrow" data-product-id="${product._id}" data-direction="-1"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-arrow next-arrow" data-product-id="${product._id}" data-direction="1"><i class="fas fa-chevron-right"></i></button>
+                    `;
+                }
+                imageCarouselHTML += `</div>`;
+
+
                 card.innerHTML = `
-                    <img src="${product.baseImageURL || placeholderImage}" alt="${product.name}" class="product-card-image" onerror="this.onerror=null; this.src='${placeholderImage}';">
+                    ${imageCarouselHTML}
                     <div class="p-5 md:p-6">
                         <h3 class="text-xl font-semibold text-zinc-100 mb-2 product-name truncate" title="${product.name}">${product.name}</h3>
                         <p class="product-price-display">Price: <span id="price-display-${product._id}">${initialBasePrice}</span> Rs + <span class="gst-rate-text">${displayGstRate.toFixed(0)}</span>% GST</p>
@@ -719,6 +830,28 @@
                 `;
                 productListContainer.appendChild(card);
                 populateDimensionDropdownsOnCard(card, product.dimensions, product._id); 
+
+                if (allImages.length > 1) {
+                    let currentImageIndex = 0;
+                    const imgElement = card.querySelector(`.product-image-${product._id}`);
+                    const prevArrow = card.querySelector('.prev-arrow');
+                    const nextArrow = card.querySelector('.next-arrow');
+
+                    function updateImage() {
+                        imgElement.src = allImages[currentImageIndex];
+                        imgElement.alt = `${product.name} - Image ${currentImageIndex + 1}`;
+                    }
+
+                    if(prevArrow) prevArrow.addEventListener('click', () => {
+                        currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+                        updateImage();
+                    });
+                    if(nextArrow) nextArrow.addEventListener('click', () => {
+                        currentImageIndex = (currentImageIndex + 1) % allImages.length;
+                        updateImage();
+                    });
+                }
+
 
                 const addToOrderButton = card.querySelector('.add-to-order-btn');
                 if (addToOrderButton) {
@@ -761,6 +894,12 @@
                         if (quantity > 0 && selectedDimensionData) { 
                             addItemToOrder(product._id, product.name, selectedDimensionName, quantity, selectedDimensionData.basePrice, productGstRate);
                             if(quantityInput) quantityInput.value = '1'; 
+                            
+                            addToOrderButton.innerHTML = `<i class="fas fa-check mr-2"></i> Added`;
+                            addToOrderButton.classList.remove('btn-premium-secondary');
+                            addToOrderButton.classList.add('btn-premium-success', 'btn-added'); 
+                            addToOrderButton.dataset.addedForDimension = selectedDimensionName;
+
                         } else {
                             let errorMsg = 'Please enter a valid quantity.';
                             if (!selectedDimensionData) {
@@ -924,11 +1063,8 @@
             const searchTerm = productSearchInput ? productSearchInput.value.toLowerCase().trim() : "";
             
             const selectedTypes = [];
-            let allProductsCheckboxChecked = true; 
             const allCheckbox = document.querySelector('.product-type-filter[value="all"]');
-            if (allCheckbox) {
-                allProductsCheckboxChecked = allCheckbox.checked;
-            }
+            let allProductsCheckboxChecked = allCheckbox ? allCheckbox.checked : true; 
 
             productTypeFilters.forEach(checkbox => {
                 if (checkbox.checked && checkbox.value !== 'all') {
@@ -936,9 +1072,9 @@
                 }
             });
 
-            const showAllCategories = allProductsCheckboxChecked || selectedTypes.length === 0;
+            const filterBySpecificTypes = selectedTypes.length > 0 && !allProductsCheckboxChecked;
             
-            if (!showAllCategories && selectedTypes.length > 0) {
+            if (filterBySpecificTypes) {
                 filteredProducts = filteredProducts.filter(product => 
                     product.productType && selectedTypes.includes(product.productType.toLowerCase())
                 );
@@ -956,13 +1092,23 @@
         
         productTypeFilters.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
+                const allCheckbox = document.querySelector('.product-type-filter[value="all"]');
                 if (checkbox.value === 'all' && checkbox.checked) {
                     productTypeFilters.forEach(cb => {
                         if (cb.value !== 'all') cb.checked = false;
                     });
                 } else if (checkbox.value !== 'all' && checkbox.checked) {
-                    const allCheckbox = document.querySelector('.product-type-filter[value="all"]');
                     if(allCheckbox) allCheckbox.checked = false;
+                } else if (checkbox.value !== 'all' && !checkbox.checked) {
+                    let anySpecificChecked = false;
+                    productTypeFilters.forEach(cb => {
+                        if (cb.value !== 'all' && cb.checked) {
+                            anySpecificChecked = true;
+                        }
+                    });
+                    if (!anySpecificChecked && allCheckbox) {
+                        allCheckbox.checked = true;
+                    }
                 }
                 applyFiltersAndSearch(); 
             });
@@ -979,6 +1125,8 @@
             }
             orderItemsContainer.innerHTML = ''; 
             
+            let totalItemsInCart = 0; // For the FAB badge
+
             if (currentOrder.length === 0) {
                 orderItemsContainer.innerHTML = '<p class="text-zinc-400 text-center py-4">Your order is currently empty. Add products to get started!</p>';
                 orderSubtotalWithoutGstElement.textContent = '0.00 Rs';
@@ -988,12 +1136,15 @@
                 placeOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 clearOrderBtn.disabled = true; 
                 clearOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                if(floatingViewCartBtn) floatingViewCartBtn.style.display = 'none'; // Hide FAB
+                if(cartItemCountBadge) cartItemCountBadge.style.display = 'none';
                 return;
             }
             placeOrderBtn.disabled = false;
             placeOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             clearOrderBtn.disabled = false; 
             clearOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if(floatingViewCartBtn) floatingViewCartBtn.style.display = 'flex'; // Show FAB
             
             let subtotalWithoutGst = 0;
             let totalTax = 0;
@@ -1003,19 +1154,10 @@
             mainUl.className = 'space-y-6'; 
 
             currentOrder.forEach(productGroup => {
-                const productLi = document.createElement('li');
-                productLi.className = 'order-product-group'; 
+                productGroup.variants.forEach(variant => { // Iterate through variants to sum quantities
+                    totalItemsInCart += variant.quantity;
 
-                const productNameHeader = document.createElement('h4');
-                productNameHeader.className = 'text-xl font-semibold text-zinc-100 mb-3'; 
-                productNameHeader.textContent = productGroup.baseProductName;
-                productLi.appendChild(productNameHeader);
-
-                const variantsUl = document.createElement('ul'); 
-                variantsUl.className = 'space-y-3 pl-1'; 
-
-                productGroup.variants.forEach(variant => {
-                    const variantLi = document.createElement('li');
+                    const variantLi = document.createElement('li'); // Create li for each variant inside its group
                     variantLi.className = 'order-variant-item flex justify-between items-start text-sm'; 
                     
                     const baseSubtotalForVariant = variant.basePrice * variant.quantity;
@@ -1028,7 +1170,7 @@
 
                     variantLi.innerHTML = `
                         <div class="flex-grow">
-                            <span class="text-zinc-200 font-medium">${variant.dimension}</span>
+                            <span class="text-zinc-200 font-medium">${productGroup.baseProductName} - ${variant.dimension}</span>
                             <span class="text-xs text-zinc-400 block">Qty: ${variant.quantity}</span>
                             <span class="text-xs text-zinc-400 block">
                                 Amount: ${baseSubtotalForVariant.toFixed(2)} Rs + GST: ${gstForVariantSubtotal.toFixed(2)} Rs
@@ -1041,17 +1183,25 @@
                             </button>
                         </div>
                     `;
-                    variantsUl.appendChild(variantLi);
+                     mainUl.appendChild(variantLi); // Append variant directly to the main list
                 });
-                productLi.appendChild(variantsUl);
-                mainUl.appendChild(productLi);
             });
 
             orderItemsContainer.appendChild(mainUl);
             orderSubtotalWithoutGstElement.textContent = `${subtotalWithoutGst.toFixed(2)} Rs`;
             orderTotalTaxElement.textContent = `${totalTax.toFixed(2)} Rs`;
             orderFinalTotalElement.textContent = `${grandTotal.toFixed(2)} Rs`; 
-            console.log("Order summary rendered. Subtotal w/o GST:", subtotalWithoutGst.toFixed(2), "Total Tax:", totalTax.toFixed(2), "Final Total:", grandTotal.toFixed(2)); 
+
+            // Update FAB badge
+            if (cartItemCountBadge) {
+                if (totalItemsInCart > 0) {
+                    cartItemCountBadge.textContent = totalItemsInCart;
+                    cartItemCountBadge.style.display = 'flex';
+                } else {
+                    cartItemCountBadge.style.display = 'none';
+                }
+            }
+            console.log("Order summary rendered. Total Items:", totalItemsInCart); 
         }
 
         /**
@@ -1336,7 +1486,6 @@
 
         window.addEventListener('resize', () => {
             headerHeight = header ? header.offsetHeight : 70;
-            // Adjust home section min-height based on new header height
             const homeSection = document.getElementById('home');
             if (homeSection) {
                  homeSection.style.minHeight = `calc(100vh - ${headerHeight}px)`;
@@ -1364,9 +1513,8 @@
             });
         }
         
-        // Add event listener for the View Cart button
-        if (viewCartBtn) {
-            viewCartBtn.addEventListener('click', (e) => {
+        if (floatingViewCartBtn) { // Check if the FAB exists
+            floatingViewCartBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const orderReviewSection = document.getElementById('order-review');
                 if (orderReviewSection) {
@@ -1376,11 +1524,9 @@
         }
 
         window.addEventListener('load', () => {
-            // Calculate header height dynamically and set CSS variable
             if(header) {
                 headerHeight = header.offsetHeight;
                 document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
-                 // Adjust home section min-height based on header height
                 const homeSection = document.getElementById('home');
                 if (homeSection) {
                     homeSection.style.minHeight = `calc(100vh - ${headerHeight}px)`;
