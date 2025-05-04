@@ -1,0 +1,47 @@
+```yaml
+  # Optional: Specify global logging option for the build
+  # This directly addresses the error you encountered.
+  options:
+    logging: CLOUD_LOGGING_ONLY 
+    # Other options like machineType can be specified here if needed, e.g.:
+    # machineType: 'N1_HIGHCPU_8' 
+
+  steps:
+  # Step 1: Build the Docker image
+  # Uses the standard Docker builder provided by Cloud Build.
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '-t', 'us-central1-docker.pkg.dev/gamma-ortho-project/gamma-ortho-backend-repo/gamma-ortho-server:$COMMIT_SHA', 
+      '-t', 'us-central1-docker.pkg.dev/gamma-ortho-project/gamma-ortho-backend-repo/gamma-ortho-server:latest', 
+      '.' # Build context is the current directory (where cloudbuild.yaml is)
+    ]
+    # id: 'Build Docker Image' # Optional ID for the step
+
+  # Step 2: Push the Docker image to Google Artifact Registry
+  # This step uses the image tagged with the commit SHA.
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/gamma-ortho-project/gamma-ortho-backend-repo/gamma-ortho-server:$COMMIT_SHA']
+    # id: 'Push Image (by Commit SHA)' # Optional ID
+
+  # Step 3: Push the 'latest' tag as well (optional, but common)
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/gamma-ortho-project/gamma-ortho-backend-repo/gamma-ortho-server:latest']
+    # id: 'Push Image (latest tag)' # Optional ID
+
+  # Define the images that will be pushed to Artifact Registry upon successful completion of all steps.
+  # This is important for Cloud Build to know which images are the final artifacts.
+  images:
+  - 'us-central1-docker.pkg.dev/gamma-ortho-project/gamma-ortho-backend-repo/gamma-ortho-server:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/gamma-ortho-project/gamma-ortho-backend-repo/gamma-ortho-server:latest'
+
+  # Available substitution variables like $PROJECT_ID, $COMMIT_SHA, $BRANCH_NAME are automatically provided by Cloud Build.
+  # You can also define your own substitutions.
+  # substitutions:
+  #   _MY_VARIABLE: "my-value"
+  ```
+* **Important:**
+    * Replace `YOUR_CHOSEN_REGION` with the GCP region you chose for Artifact Registry (e.g., `us-central1`).
+    * Replace `YOUR_PROJECT_ID` with your actual Google Cloud Project ID.
+    * The `.` at the end of the `docker build` args line indicates that the Docker build context is the current directory (where `cloudbuild.yaml` and your `Dockerfile` are located).
+* Commit this `cloudbuild.yaml` file to your repository.
