@@ -1,0 +1,9 @@
+node_modules 
+npm-debug.log 
+Dockerfile  
+.dockerignore 
+.git 
+.gitignore 
+*.env 
+cloudbuild.yaml  
+# Add any other files/folders not needed in the container
