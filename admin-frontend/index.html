@@ -663,7 +663,7 @@
                 card.innerHTML = `
                     <div>
                         ${imageCarouselHTML}
-                        <div class="admin-product-card-content p-4"> {/* Moved p-4 here */}
+                        <div class="admin-product-card-content p-4">
                             <div>
                                 <h4 class="font-semibold text-lg text-zinc-100 mb-1 truncate" title="${product.name}">${product.name} 
                                     <span class="text-xs font-normal ${product.isActive ? 'text-green-400' : 'text-red-400'}">(${product.isActive ? 'Active' : 'Inactive'})</span>
@@ -675,7 +675,7 @@
                                     <span class="text-xs text-zinc-400">(+ ${displayGstRate.toFixed(0)}% GST)</span>
                                 </p>
                             </div>
-                            <div class="actions mt-4"> {/* Ensure actions are at the bottom */}
+                            <div class="actions mt-4">
                                 <button class="btn btn-warning btn-sm edit-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-edit mr-1"></i> Edit</button>
                                 <button class="btn btn-danger btn-sm delete-product-btn flex-grow" data-id="${product._id}"><i class="fas fa-trash mr-1"></i> Delete</button>
                             </div>
