@@ -23,12 +23,19 @@
             border-radius: 0.75rem; /* rounded-xl */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* shadow-lg */
         }
-        .form-section, .list-section { 
+        .form-section { /* For Add/Edit Product form */
             margin-bottom: 2.5rem; 
             padding: 2rem; 
             background-color: #3f3f46; /* zinc-700 */
             border-radius: 0.5rem; /* rounded-lg */
             border: 1px solid #52525b; /* zinc-600 */
+        }
+        .list-section { /* For "Listed Products" section */
+            margin-bottom: 2.5rem; 
+            padding: 2rem; 
+            /* background-color: #3f3f46; /* REMOVED - Will inherit from admin-container */
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #52525b; /* zinc-600 - Thin "white" border */
         }
         
         label { 
@@ -160,8 +167,8 @@
             position: relative;
             width: 100%; 
             height: 12rem; 
-            background-color: #3f3f46; /* zinc-700 */
-            border-bottom: 1px solid #52525b; /* zinc-600 */
+            background-color: #52525b; /* zinc-600 - Changed background for image container */
+            border-bottom: 1px solid #3f3f46; /* zinc-700 - Adjusted border */
         }
         .admin-product-card-image { 
             width: 100%; 
@@ -205,20 +212,20 @@
         .admin-product-card .actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; }
         .status-badge {
             display: inline-block;
-            padding: 0.25rem 0.75rem; /* py-1 px-3 */
-            font-size: 0.75rem; /* text-xs */
-            font-weight: 600; /* font-semibold */
-            border-radius: 9999px; /* rounded-full */
+            padding: 0.25rem 0.75rem; 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            border-radius: 9999px; 
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
         .status-badge-active {
-            background-color: #22c55e; /* green-500 */
-            color: #f0fdf4; /* green-50 */
+            background-color: #22c55e; 
+            color: #f0fdf4; 
         }
         .status-badge-inactive {
-            background-color: #ef4444; /* red-500 */
-            color: #fef2f2; /* red-50 */
+            background-color: #ef4444; 
+            color: #fef2f2; 
         }
 
 
@@ -320,7 +327,6 @@
             <section class="list-section" id="existing-products-section">
                 <h3 class="text-2xl font-semibold mb-6 text-zinc-100">Listed Products</h3>
                 <div id="existing-products-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* This div will be populated by renderAdminProductList */}
                     <p class="text-center text-zinc-400 col-span-full">Loading products...</p>
                 </div>
             </section>
@@ -355,7 +361,7 @@
                     <div class="pt-2">
                         <label class="text-lg font-medium mb-3 text-zinc-200">Dimensions & Pricing (Base Price before GST)</label>
                         <div id="dimensions-container" class="space-y-3">
-            
+                            {/* Dimension entries will be added here by JavaScript */}
                         </div>
                         <button type="button" id="add-dimension-btn" class="btn btn-secondary btn-sm mt-3">
                             <i class="fas fa-plus mr-1"></i> Add Dimension
@@ -650,7 +656,7 @@
 
             productsToRender.forEach(product => {
                 const card = document.createElement('div');
-                card.className = 'admin-product-card'; // Uses new CSS class
+                card.className = 'admin-product-card'; 
                 card.dataset.productId = product._id;
 
                 const placeholderImage = `https://placehold.co/600x400/3f3f46/e4e4e7?text=${encodeURIComponent(product.name)}`;
